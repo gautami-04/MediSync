@@ -1,4 +1,3 @@
-
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 
@@ -16,7 +15,7 @@ const protect = async (req, res, next) => {
 
       req.user = await User.findById(decoded.id).select('-password');
 
-      return next(); // ✅ important
+      return next();
     } catch (error) {
       return res.status(401).json({ message: 'Token failed' });
     }
@@ -25,4 +24,6 @@ const protect = async (req, res, next) => {
   return res.status(401).json({ message: 'No token' });
 };
 
-module.exports = protect; // ✅ THIS LINE FIXES YOUR ERROR
+// ✅ supports BOTH import styles
+module.exports = protect;
+module.exports.protect = protect;

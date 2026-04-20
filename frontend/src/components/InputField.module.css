@@ -1,0 +1,77 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inputShell {
+  position: relative;
+}
+
+.label {
+  color: #1d3f64;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.required {
+  color: #d14343;
+  margin-left: 4px;
+}
+
+.input {
+  width: 100%;
+  border: 1px solid #c8dbef;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 12px 14px;
+  font-size: 0.96rem;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.inputWithButton {
+  padding-right: 76px;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #2f7cd7;
+  box-shadow: 0 0 0 4px rgba(47, 124, 215, 0.15);
+}
+
+.errorInput {
+  border-color: #d84b4b;
+  box-shadow: 0 0 0 4px rgba(216, 75, 75, 0.14);
+}
+
+.trailingButton {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 1px solid #c5daf1;
+  background: #f4f9ff;
+  color: #1e66b6;
+  border-radius: 9px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.trailingButton:hover {
+  background: #eaf4ff;
+}
+
+.helperText {
+  margin: 0;
+  color: #5e7ea0;
+  font-size: 0.82rem;
+}
+
+.errorText {
+  margin: 0;
+  color: #be2e2e;
+  font-size: 0.85rem;
+}

@@ -1,9 +1,15 @@
-@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
 :root {
-  --bg-1: #f3f9ff;
-  --bg-2: #e6f2ff;
-  --text-primary: #14385f;
+  --bg-1: #e9f6f0;
+  --bg-2: #dcf1e7;
+  --bg-dark: #123328;
+  --text-primary: #112820;
+  --text-secondary: #4a6659;
+  --brand-primary: #21674e;
+  --brand-hover: #19523e;
+  --input-bg: #e2f1e9;
+  --white: #ffffff;
 }
 
 * {
@@ -14,13 +20,13 @@ html,
 body,
 #root {
   margin: 0;
-  min-height: 100%;
+  min-height: 100vh;
 }
 
 body {
-  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-family: "Inter", "Segoe UI", sans-serif;
   color: var(--text-primary);
-  background: linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 100%);
+  background: var(--bg-1);
 }
 
 a {
@@ -31,4 +37,4 @@ button,
 input,
 select {
   font: inherit;
-}
+}

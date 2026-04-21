@@ -1,34 +1,42 @@
 .button {
   width: 100%;
-  min-height: 46px;
+  min-height: 52px;
   border: none;
-  border-radius: 12px;
-  font-size: 0.96rem;
-  font-weight: 700;
-  letter-spacing: 0.2px;
+  border-radius: 999px; /* pill shape */
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
 }
 
 .primary {
   color: #ffffff;
-  background: linear-gradient(135deg, #1d6fd8 0%, #31a5eb 100%);
-  box-shadow: 0 12px 24px rgba(26, 102, 188, 0.24);
+  background: var(--brand-primary);
+  box-shadow: 0 4px 12px rgba(33, 103, 78, 0.2);
 }
 
 .secondary {
-  color: #1455aa;
-  background: #e7f2ff;
-  border: 1px solid #b8d6f4;
+  color: var(--text-primary);
+  background: #f0f0f0;
 }
 
 .button:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 14px 28px rgba(26, 102, 188, 0.3);
+  background: var(--brand-hover);
+  box-shadow: 0 6px 16px rgba(33, 103, 78, 0.3);
+}
+
+.secondary:hover:not(:disabled) {
+  background: #e4e4e4;
+  box-shadow: none;
 }
 
 .disabled {
-  opacity: 0.8;
+  opacity: 0.6;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
@@ -41,10 +49,10 @@
 }
 
 .spinner {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.45);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: #ffffff;
   animation: spin 0.8s linear infinite;
 }

@@ -1,12 +1,24 @@
 const User = require('../models/user.model');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { generateOtp } = require('../utils/otp');
+const { sendOtpEmail } = require('../services/email.service');
+
+const OTP_VALIDITY_MS = 10 * 60 * 1000;
 
 // Generate token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: '7d',
   });
+};
+
+const issueOtpForUser = async (user) => {
+  const otp = generateOtp();
+  user.otp = otp;
+  user.otpExpiresAt = new Date(Date.now() + OTP_VALIDITY_MS);
+  await user.save();
+  return sendOtpEmail(user.email, otp);
 };
 
 // Register
@@ -36,6 +48,8 @@ exports.register = async (req, res) => {
       phone: phone || undefined,
     });
 
+    const delivery = await issueOtpForUser(user);
+
     res.status(201).json({
       _id: user._id,
       name: user.name,
@@ -56,10 +70,17 @@ exports.login = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && (await bcrypt.compare(password, user.password))) {
+      if (!user.isEmailVerified) {
+        return res.status(403).json({
+          message: 'Please verify your email OTP before login.',
+        });
+      }
+
       res.json({
         _id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
         token: generateToken(user._id),
       });
     } else {
@@ -70,29 +91,77 @@ exports.login = async (req, res) => {
   }
 };
 
-// Mock OTP Verification
+// Send OTP (new or resend)
+exports.sendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const delivery = await issueOtpForUser(user);
+
+    res.json({
+      message: delivery?.fallback
+        ? 'OTP generated in server logs (email fallback mode).'
+        : 'OTP sent successfully to email.',
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Verify OTP
 exports.verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
-    
-    // Accept any 6-digit OTP for development/testing purposes
-    if (otp && otp.length === 6) {
-      const user = await User.findOne({ email });
-      
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
 
-      res.json({
-        message: 'OTP verified successfully',
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        token: generateToken(user._id),
-      });
-    } else {
-      res.status(400).json({ message: 'Invalid OTP format' });
+    if (!email || !otp) {
+      return res.status(400).json({ message: 'Email and OTP are required' });
     }
+
+    if (otp.length !== 6) {
+      return res.status(400).json({ message: 'Invalid OTP format' });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!user.otp || !user.otpExpiresAt) {
+      return res.status(400).json({ message: 'OTP not requested. Please resend OTP.' });
+    }
+
+    if (new Date() > user.otpExpiresAt) {
+      return res.status(400).json({ message: 'OTP has expired. Please request a new OTP.' });
+    }
+
+    if (user.otp !== otp) {
+      return res.status(400).json({ message: 'Incorrect OTP' });
+    }
+
+    user.isEmailVerified = true;
+    user.otp = null;
+    user.otpExpiresAt = null;
+    await user.save();
+
+    res.json({
+      message: 'OTP verified successfully',
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      token: generateToken(user._id),
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

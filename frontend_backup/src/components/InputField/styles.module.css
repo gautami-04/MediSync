@@ -1,0 +1,87 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inputShell {
+  position: relative;
+}
+
+.label {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.required {
+  color: #d14343;
+  margin-left: 4px;
+}
+
+.input {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 999px; /* pill shape */
+  background: var(--input-bg);
+  padding: 16px 20px;
+  font-size: 1rem;
+  color: var(--text-primary);
+  transition: all 0.25s ease;
+}
+
+.input::placeholder {
+  color: #9ab4a8;
+}
+
+.inputWithButton {
+  padding-right: 76px;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(33, 103, 78, 0.1);
+}
+
+.errorInput {
+  border-color: #d84b4b;
+  background: #fdf5f5;
+  box-shadow: 0 0 0 4px rgba(216, 75, 75, 0.14);
+}
+
+.trailingButton {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: var(--brand-primary);
+  padding: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.trailingButton:hover {
+  text-decoration: underline;
+}
+
+.helperText {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.errorText {
+  margin: 0;
+  color: #be2e2e;
+  font-size: 0.85rem;
+}

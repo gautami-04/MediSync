@@ -1,10 +1,9 @@
 const mongoose = require('mongoose');
 
-const userSchema = new mongoose.Schema(
+const pendingUserSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    phone: { type: String },
     password: { type: String, required: true },
     role: {
       type: String,
@@ -13,10 +12,11 @@ const userSchema = new mongoose.Schema(
     },
     otp: { type: String, default: null },
     otpExpiresAt: { type: Date, default: null },
-    passwordResetOtpVerifiedUntil: { type: Date, default: null },
-    isEmailVerified: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model('User', userSchema);
+// Expire unverified registrations automatically after 15 minutes.
+pendingUserSchema.index({ createdAt: 1 }, { expireAfterSeconds: 15 * 60 });
+
+module.exports = mongoose.model('PendingUser', pendingUserSchema);

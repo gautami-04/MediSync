@@ -6,6 +6,8 @@ import { registerUser } from "../../services/authService";
 import { validateRegisterForm } from "../../utils/validators";
 import styles from "./AuthPages.module.css";
 
+const visibleRegisterFields = ["fullName", "email", "password", "confirmPassword"];
+
 const initialForm = {
 	fullName: "",
 	email: "",
@@ -38,6 +40,23 @@ const Register = () => {
 	const handleSubmit = async (event) => {
 		event.preventDefault();
 
+		const fullValidationErrors = validateRegisterForm(form, role);
+		const validationErrors = Object.fromEntries(
+			Object.entries(fullValidationErrors).filter(([field]) =>
+				visibleRegisterFields.includes(field)
+			)
+		);
+
+		if (!String(form.phone || "").trim()) {
+			validationErrors.phone = "Phone number is required.";
+		}
+
+		setErrors(validationErrors);
+
+		if (Object.keys(validationErrors).length > 0) {
+			return;
+		}
+
 		if (!agreed) {
 			setErrors(prev => ({...prev, agree: "You must agree to the terms"}));
 			return;
@@ -59,15 +78,18 @@ const Register = () => {
 		setAlert(null);
 
 		try {
-			await registerUser(payload);
+			const response = await registerUser(payload);
+			const devOtp = response?.devOtp || "";
 
 			setAlert({
 				type: "success",
-				message: "Registration successful. Please verify your OTP.",
+				message: devOtp
+					? `Registration started. Dev OTP: ${devOtp}`
+					: "Registration successful. Please verify your OTP.",
 			});
 
 			navigate("/verify-otp", {
-				state: { email: payload.email },
+				state: { email: payload.email, devOtp },
 			});
 		} catch (error) {
 			setAlert({

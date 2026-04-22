@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Button from "../../components/Button";
-import { verifyOtp } from "../../services/authService";
+import { sendOtp, verifyOtp } from "../../services/authService";
 import { validateOtp } from "../../utils/validators";
 import styles from "./AuthPages.module.css";
 
@@ -113,18 +113,42 @@ const OtpVerification = () => {
     }
   };
 
-  const handleResendOtp = () => {
+  const handleResendOtp = async () => {
     if (resendCountdown > 0) {
       return;
     }
 
-    setOtpDigits(Array(OTP_LENGTH).fill(""));
-    setResendCountdown(30);
+    if (!email) {
+      setAlert({
+        type: "error",
+        message: "Email is missing. Please register again to request OTP.",
+      });
+      return;
+    }
 
-    setAlert({
-      type: "success",
-      message: "A new OTP has been sent in the UI flow. Hook backend resend endpoint when ready.",
-    });
+    setLoading(true);
+
+    try {
+      await sendOtp({ email });
+
+      setOtpDigits(Array(OTP_LENGTH).fill(""));
+      setResendCountdown(30);
+
+      setAlert({
+        type: "success",
+        message: "A new OTP has been sent to your email.",
+      });
+    } catch (requestError) {
+      setAlert({
+        type: "error",
+        message:
+          requestError?.response?.data?.message ||
+          requestError?.message ||
+          "Failed to resend OTP. Please try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

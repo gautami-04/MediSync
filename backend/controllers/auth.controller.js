@@ -27,7 +27,7 @@ const issueOtpForRecord = async (record) => {
 // Register
 exports.register = async (req, res) => {
   try {
-    let { name, fullName, email, password, role } = req.body;
+    let { name, fullName, email, password, role, phone } = req.body;
     name = name || fullName;
     email = String(email || '').trim().toLowerCase();
 

@@ -1,9 +1,52 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../components/DashboardLayout";
+import useAuth from "../hooks/useAuth";
+import { getMyProfile } from "../services/user.service";
 import styles from "./Settings.module.css";
 
 const Settings = () => {
 	const [activeTab, setActiveTab] = useState("Profile");
+	const { user } = useAuth();
+	const [profile, setProfile] = useState(null);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState("");
+
+	useEffect(() => {
+		let mounted = true;
+
+		const loadProfile = async () => {
+			setLoading(true);
+			setError("");
+			try {
+				const data = await getMyProfile();
+				if (mounted) {
+					setProfile(data);
+				}
+			} catch (requestError) {
+				if (mounted) {
+					setError(requestError?.response?.data?.message || "Unable to load profile details.");
+				}
+			} finally {
+				if (mounted) {
+					setLoading(false);
+				}
+			}
+		};
+
+		loadProfile();
+
+		return () => {
+			mounted = false;
+		};
+	}, []);
+
+	const displayName = useMemo(() => {
+		return profile?.name || user?.name || "User";
+	}, [profile, user]);
+
+	const displayEmail = useMemo(() => {
+		return profile?.email || user?.email || "";
+	}, [profile, user]);
 	
 	const [alerts, setAlerts] = useState({
 		email: true,
@@ -36,12 +79,14 @@ const Settings = () => {
 				</div>
 			</div>
 
+			{error ? <div style={{ color: "#b9383d", fontWeight: 600 }}>{error}</div> : null}
+
 			<div className={styles.settingsGrid}>
 				<div className={styles.leftCol}>
 					<div className={styles.card}>
 						<div className={styles.profileHeader}>
 							<div className={styles.profileImageWrapper}>
-								<img src="https://ui-avatars.com/api/?name=Alexander+Thompson&background=random" alt="Profile" className={styles.profileImage} />
+								<img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`} alt="Profile" className={styles.profileImage} />
 								<div className={styles.editImageBtn}>
 									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
 								</div>
@@ -50,7 +95,7 @@ const Settings = () => {
 								<h2 className={styles.cardTitle}>Personal Details</h2>
 								<p className={styles.cardDesc} style={{ marginBottom: 0 }}>Update your medical identity and contact information.</p>
 								<div className={styles.badges}>
-									<span className={`${styles.badge} ${styles.badgeVerified}`}>VERIFIED PATIENT</span>
+									<span className={`${styles.badge} ${styles.badgeVerified}`}>{(profile?.isEmailVerified || false) ? "EMAIL VERIFIED" : "UNVERIFIED"}</span>
 									<span className={`${styles.badge} ${styles.badgePremium}`}>PREMIUM PLAN</span>
 								</div>
 							</div>
@@ -59,32 +104,23 @@ const Settings = () => {
 						<div className={styles.formGrid}>
 							<div className={styles.formGroup}>
 								<label className={styles.label}>FULL NAME</label>
-								<input type="text" className={styles.input} defaultValue="Alexander Thompson" />
+								<input type="text" className={styles.input} value={displayName} readOnly />
 							</div>
 							<div className={styles.formGroup}>
 								<label className={styles.label}>EMAIL ADDRESS</label>
-								<input type="email" className={styles.input} defaultValue="alex.thompson@health.com" />
+								<input type="email" className={styles.input} value={displayEmail} readOnly />
 							</div>
 							<div className={styles.formGroup}>
 								<label className={styles.label}>PHONE NUMBER</label>
-								<input type="tel" className={styles.input} defaultValue="+1 (555) 012-3456" />
+								<input type="tel" className={styles.input} value={profile?.phone || "Not set"} readOnly />
 							</div>
 							<div className={styles.formGroup}>
 								<label className={styles.label}>DATE OF BIRTH</label>
-								<input type="date" className={styles.input} defaultValue="1992-05-14" />
+								<input type="text" className={styles.input} value={profile?.dob || "Not set"} readOnly />
 							</div>
 							<div className={styles.formGroup} style={{ gridColumn: "1 / -1" }}>
 								<label className={styles.label}>BLOOD GROUP</label>
-								<select className={styles.input} defaultValue="A+">
-									<option value="A+">A Positive (A+)</option>
-									<option value="A-">A Negative (A-)</option>
-									<option value="B+">B Positive (B+)</option>
-									<option value="B-">B Negative (B-)</option>
-									<option value="O+">O Positive (O+)</option>
-									<option value="O-">O Negative (O-)</option>
-									<option value="AB+">AB Positive (AB+)</option>
-									<option value="AB-">AB Negative (AB-)</option>
-								</select>
+								<input type="text" className={styles.input} value={profile?.bloodGroup || "Not set"} readOnly />
 							</div>
 						</div>
 					</div>
@@ -96,7 +132,7 @@ const Settings = () => {
 						<div className={styles.formGrid} style={{ marginBottom: "24px" }}>
 							<div className={styles.formGroup} style={{ gridColumn: "1 / -1" }}>
 								<label className={styles.label}>CURRENT PASSWORD</label>
-								<input type="password" className={styles.input} defaultValue="password123" />
+								<input type="password" className={styles.input} value="" readOnly placeholder="Hidden for security" />
 							</div>
 							<div className={styles.formGroup}>
 								<label className={styles.label}>NEW PASSWORD</label>
@@ -165,7 +201,7 @@ const Settings = () => {
 							</div>
 						</div>
 
-						<button className={styles.logoutAllBtn}>Log out from all devices</button>
+						<button className={styles.logoutAllBtn}>{loading ? "Loading profile..." : "Log out from all devices"}</button>
 					</div>
 
 					<div className={styles.actionGrid}>

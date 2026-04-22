@@ -10,6 +10,9 @@ const userSchema = new mongoose.Schema(
       enum: ['patient', 'doctor', 'admin'],
       default: 'patient',
     },
+    otp: { type: String, default: null },
+    otpExpiresAt: { type: Date, default: null },
+    isEmailVerified: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

@@ -129,7 +129,7 @@ const Register = () => {
 							<div style={{ background: "var(--brand-primary)", color: "white", borderRadius: "50%", width: "24px", height: "24px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontWeight: 700, fontSize: "0.8rem" }}>i</div>
 							<div>
 								<div style={{ fontWeight: 700, color: "var(--bg-dark)", fontSize: "0.95rem" }}>Verification Required</div>
-								<div style={{ color: "var(--text-secondary)", fontSize: "0.9rem", marginTop: "4px" }}>After completing this step, we'll send a 6-digit OTP to your phone number for secure verification.</div>
+								<div style={{ color: "var(--text-secondary)", fontSize: "0.9rem", marginTop: "4px" }}>After completing this step, we'll send a 6-digit OTP to your email for secure verification.</div>
 							</div>
 						</div>
 

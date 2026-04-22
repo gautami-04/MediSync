@@ -17,7 +17,20 @@ const OtpVerification = () => {
   const navigate = useNavigate();
   const inputRefs = useRef([]);
   const email = location.state?.email || "";
+  const devOtp = String(location.state?.devOtp || "");
   const otp = otpDigits.join("");
+
+  useEffect(() => {
+    if (!/^\d{6}$/.test(devOtp)) {
+      return;
+    }
+
+    setOtpDigits(devOtp.split(""));
+    setAlert({
+      type: "success",
+      message: `Dev mode OTP detected: ${devOtp}`,
+    });
+  }, [devOtp]);
 
   useEffect(() => {
     if (resendCountdown <= 0) {
@@ -92,7 +105,7 @@ const OtpVerification = () => {
     setAlert(null);
 
     try {
-      await verifyOtp({ otp, email });
+      await verifyOtp({ otp, email, purpose: "registration" });
 
       setAlert({
         type: "success",
@@ -129,7 +142,7 @@ const OtpVerification = () => {
     setLoading(true);
 
     try {
-      await sendOtp({ email });
+      await sendOtp({ email, purpose: "registration" });
 
       setOtpDigits(Array(OTP_LENGTH).fill(""));
       setResendCountdown(30);

@@ -1,4 +1,4 @@
-import styles from "./InputField.module.css";
+import styles from "./styles.module.css";
 
 const InputField = ({
   label,

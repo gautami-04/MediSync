@@ -1,5 +1,6 @@
-import { createContext, useCallback, useMemo, useState } from "react";
+import { createContext, useCallback, useMemo, useState, useEffect } from "react";
 import { loginUser } from "../services/authService";
+import { getMe } from "../services/user.service";
 
 const TOKEN_KEY = "medisync_token";
 const USER_KEY = "medisync_user";
@@ -69,6 +70,31 @@ export const AuthProvider = ({ children }) => {
 		safeRemoveItem(USER_KEY);
 	}, []);
 
+	useEffect(() => {
+		let mounted = true;
+
+		const restoreProfile = async () => {
+			if (!token) return;
+			if (user) return; // already have a user
+
+			try {
+				const profile = await getMe();
+				if (!mounted) return;
+				setUser(profile);
+				safeSetItem(USER_KEY, JSON.stringify(profile));
+			} catch (err) {
+				// Token may be invalid or expired; clear stored session to force re-login
+				if (mounted) clearSession();
+			}
+		};
+
+		restoreProfile();
+
+		return () => {
+			mounted = false;
+		};
+	}, [token]);
+
 	const login = useCallback(
 		async (credentials) => {
 			setAuthLoading(true);
@@ -76,8 +102,17 @@ export const AuthProvider = ({ children }) => {
 				const data = await loginUser(credentials);
 				const nextToken =
 					data?.token || data?.accessToken || data?.data?.token || data?.data?.accessToken;
-				const nextUser =
-					data?.user || data?.data?.user || { email: credentials.email, role: "patient" };
+
+				// Normalize user object from backend response
+				let nextUser = data?.user || data?.data?.user || null;
+				if (!nextUser && data) {
+					nextUser = {
+						_id: data._id || data.id || null,
+						name: data.name || data.fullName || credentials.fullName || credentials.name || "",
+						email: data.email || credentials.email || "",
+						role: data.role || "patient",
+					};
+				}
 
 				if (!nextToken) {
 					throw new Error("Login succeeded but token was not returned.");

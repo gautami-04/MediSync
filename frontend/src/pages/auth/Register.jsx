@@ -52,6 +52,7 @@ const Register = () => {
 			role,
 			fullName: form.fullName.trim(),
 			email: form.email.trim(),
+			phone: form.phone.trim(),
 			password: form.password,
 		};
 

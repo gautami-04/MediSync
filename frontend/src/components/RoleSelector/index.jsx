@@ -1,4 +1,4 @@
-import styles from "./RoleSelector.module.css";
+import styles from "./styles.module.css";
 
 const roleOptions = [
   {

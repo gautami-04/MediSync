@@ -7,6 +7,7 @@ import ForgotPassword from "../pages/auth/ForgotPassword";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import OtpVerification from "../pages/auth/OtpVerification";
+import Appointments from "../pages/Appointments";
 
 const AuthRoutes = () => {
   return (
@@ -21,6 +22,7 @@ const AuthRoutes = () => {
         <Route path="/home" element={<Home />} />
         <Route path="/payments" element={<Payments />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/appointments" element={<Appointments />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/login" replace />} />

@@ -24,7 +24,7 @@ const issueOtpForUser = async (user) => {
 // Register
 exports.register = async (req, res) => {
   try {
-    let { name, fullName, email, password, role } = req.body;
+    let { name, fullName, email, password, role, phone } = req.body;
     name = name || fullName;
 
     if (!name || !email || !password) {
@@ -38,24 +38,24 @@ exports.register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const normalizedRole = ['patient', 'doctor', 'admin'].includes(role) ? role : 'patient';
+
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
-      role,
+      role: normalizedRole,
+      phone: phone || undefined,
     });
 
     const delivery = await issueOtpForUser(user);
 
     res.status(201).json({
-      message: delivery?.fallback
-        ? 'Registration successful. OTP generated in server logs (email fallback mode).'
-        : 'Registration successful. OTP sent to email.',
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
-      isEmailVerified: user.isEmailVerified,
+      token: generateToken(user._id),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

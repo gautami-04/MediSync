@@ -123,6 +123,41 @@ Base path for all APIs: `/api`
 - Route files exist for `patient`, `payment`, and `review`, but they are currently empty and not mounted in `app.js`.
 - Error-handling middleware file exists but is not wired in `app.js` yet.
 
+## Frontend Integration
+
+- Development: set the frontend API base URL in `frontend/.env`:
+
+```env
+VITE_API_BASE_URL=http://localhost:5000
+```
+
+- Run both servers for local development:
+
+```bash
+# backend
+cd backend
+npm install
+npm start
+
+# frontend (in a separate terminal)
+cd frontend
+npm install
+npm run dev
+```
+
+- Production: build the frontend and start the backend (backend will serve `frontend/dist` when `NODE_ENV=production`):
+
+```bash
+cd frontend
+npm run build
+
+# then start backend in production mode
+cd ../backend
+NODE_ENV=production npm start
+```
+
+Note: On Windows PowerShell set `NODE_ENV` with `$env:NODE_ENV='production'; npm start`.
+
 ## Scripts
 
 - `npm start`: Runs `node server.js`

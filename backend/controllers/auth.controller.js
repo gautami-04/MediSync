@@ -12,7 +12,7 @@ const generateToken = (id) => {
 // Register
 exports.register = async (req, res) => {
   try {
-    let { name, fullName, email, password } = req.body;
+    let { name, fullName, email, password, role, phone } = req.body;
     name = name || fullName;
 
     if (!name || !email || !password) {
@@ -26,19 +26,23 @@ exports.register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const normalizedRole = ['patient', 'doctor', 'admin'].includes(role) ? role : 'patient';
+
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
+      role: normalizedRole,
+      phone: phone || undefined,
     });
 
     res.status(201).json({
-  _id: user._id,
-  name: user.name,
-  email: user.email,
-  role: user.role, 
-  token: generateToken(user._id),
-});
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      token: generateToken(user._id),
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

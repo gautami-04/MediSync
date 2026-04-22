@@ -46,6 +46,8 @@ Create a `.env` file in the backend root:
 PORT=5000
 MONGO_URI=mongodb://127.0.0.1:27017/medisync
 JWT_SECRET=replace_with_a_strong_secret
+EMAIL_USER=medisyncg6@gmail.com
+EMAIL_PASS=your_gmail_app_password
 ```
 
 ### Variable Notes
@@ -53,6 +55,8 @@ JWT_SECRET=replace_with_a_strong_secret
 - `PORT` (optional): Server port. Defaults to `5000` if not set.
 - `MONGO_URI` (required): MongoDB connection string.
 - `JWT_SECRET` (required): Secret used to sign and verify JWTs.
+- `EMAIL_USER` (required for OTP email): Sender Gmail address.
+- `EMAIL_PASS` (required for OTP email): Gmail app password for `EMAIL_USER`.
 
 ## Run
 
@@ -88,6 +92,8 @@ Base path for all APIs: `/api`
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `POST /api/auth/send-otp`
+- `POST /api/auth/verify-otp`
 
 ### Users
 

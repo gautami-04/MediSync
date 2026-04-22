@@ -77,7 +77,16 @@ export const AuthProvider = ({ children }) => {
 				const nextToken =
 					data?.token || data?.accessToken || data?.data?.token || data?.data?.accessToken;
 				const nextUser =
-					data?.user || data?.data?.user || { email: credentials.email, role: "patient" };
+					data?.user ||
+					data?.data?.user ||
+					(data?._id || data?.email
+						? {
+							_id: data?._id,
+							name: data?.name,
+							email: data?.email,
+							role: data?.role || "patient",
+						}
+						: { email: credentials.email, role: "patient" });
 
 				if (!nextToken) {
 					throw new Error("Login succeeded but token was not returned.");

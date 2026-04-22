@@ -1,16 +1,177 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import DashboardLayout from "../components/DashboardLayout";
+import { getMyAppointments } from "../services/appointment.service";
+import { getMyMedicalRecords } from "../services/medicalRecord.service";
+import { getMyPayments } from "../services/payment.service";
 import styles from "./Home.module.css";
 
+const MONTH_LABELS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN"];
+
+const parseAppointmentDate = (appointment) => {
+	if (!appointment?.date) {
+		return null;
+	}
+
+	const dateTime = appointment.time
+		? new Date(`${appointment.date} ${appointment.time}`)
+		: new Date(appointment.date);
+
+	return Number.isNaN(dateTime.getTime()) ? null : dateTime;
+};
+
+const formatDate = (value) => {
+	if (!value) return "-";
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return String(value);
+	return date.toLocaleDateString(undefined, { month: "short", day: "2-digit" });
+};
+
+const formatTime = (appointment) => {
+	if (appointment?.time) {
+		return appointment.time;
+	}
+
+	const parsed = parseAppointmentDate(appointment);
+	if (!parsed) return "-";
+	return parsed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+};
+
 const Home = () => {
-	const { user, logout } = useAuth();
+	const { user } = useAuth();
+	const [appointments, setAppointments] = useState([]);
+	const [payments, setPayments] = useState([]);
+	const [records, setRecords] = useState([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState("");
+
+	useEffect(() => {
+		let isMounted = true;
+
+		const loadDashboard = async () => {
+			setLoading(true);
+			setError("");
+
+			const [appointmentsRes, paymentsRes, recordsRes] = await Promise.allSettled([
+				getMyAppointments(),
+				getMyPayments(),
+				getMyMedicalRecords(),
+			]);
+
+			if (!isMounted) {
+				return;
+			}
+
+			if (appointmentsRes.status === "fulfilled") {
+				setAppointments(Array.isArray(appointmentsRes.value) ? appointmentsRes.value : []);
+			} else {
+				setAppointments([]);
+			}
+
+			if (paymentsRes.status === "fulfilled") {
+				setPayments(Array.isArray(paymentsRes.value) ? paymentsRes.value : []);
+			} else {
+				setPayments([]);
+			}
+
+			if (recordsRes.status === "fulfilled") {
+				const payload = recordsRes.value;
+				const normalized = Array.isArray(payload?.data)
+					? payload.data
+					: Array.isArray(payload)
+						? payload
+						: [];
+				setRecords(normalized);
+			} else {
+				setRecords([]);
+			}
+
+			if (appointmentsRes.status === "rejected" && paymentsRes.status === "rejected") {
+				setError("Unable to load dashboard data right now.");
+			}
+
+			setLoading(false);
+		};
+
+		loadDashboard();
+
+		return () => {
+			isMounted = false;
+		};
+	}, []);
 
 	const userName = useMemo(() => {
 		const name = user?.fullName || user?.name || "Sarah";
 		return name.split(" ")[0];
 	}, [user]);
+
+	const upcomingAppointments = useMemo(() => {
+		const now = new Date();
+		return appointments
+			.filter((appointment) => appointment?.status !== "cancelled")
+			.filter((appointment) => {
+				const date = parseAppointmentDate(appointment);
+				return date ? date >= now : true;
+			})
+			.sort((a, b) => {
+				const dateA = parseAppointmentDate(a);
+				const dateB = parseAppointmentDate(b);
+				if (!dateA && !dateB) return 0;
+				if (!dateA) return 1;
+				if (!dateB) return -1;
+				return dateA - dateB;
+			});
+	}, [appointments]);
+
+	const stats = useMemo(() => {
+		const paidTotal = payments
+			.filter((payment) => payment?.status === "paid")
+			.reduce((sum, payment) => sum + (Number(payment?.amount) || 0), 0);
+
+		const uniqueDoctors = new Set(
+			appointments
+				.map((appointment) => appointment?.doctor?.name || appointment?.doctorName)
+				.filter(Boolean)
+		).size;
+
+		return {
+			appointmentsCount: appointments.length,
+			upcomingCount: upcomingAppointments.length,
+			totalSpent: paidTotal,
+			savedDoctors: uniqueDoctors,
+		};
+	}, [appointments, payments, upcomingAppointments]);
+
+	const monthlyVisits = useMemo(() => {
+		const now = new Date();
+		const monthBuckets = new Map();
+
+		for (let i = 5; i >= 0; i -= 1) {
+			const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+			const key = `${d.getFullYear()}-${d.getMonth()}`;
+			monthBuckets.set(key, 0);
+		}
+
+		appointments.forEach((appointment) => {
+			const date = parseAppointmentDate(appointment);
+			if (!date) return;
+
+			const key = `${date.getFullYear()}-${date.getMonth()}`;
+			if (monthBuckets.has(key)) {
+				monthBuckets.set(key, (monthBuckets.get(key) || 0) + 1);
+			}
+		});
+
+		const values = Array.from(monthBuckets.values());
+		const maxValue = Math.max(...values, 1);
+
+		return values.map((count, index) => ({
+			label: MONTH_LABELS[index],
+			count,
+			height: Math.max(20, Math.round((count / maxValue) * 90)),
+		}));
+	}, [appointments]);
 
 	return (
 		<DashboardLayout activePath="/home">
@@ -27,31 +188,35 @@ const Home = () => {
 						<div className={styles.statIcon}>
 							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
 						</div>
-						<div className={styles.statValue}>12</div>
+						<div className={styles.statValue}>{stats.appointmentsCount}</div>
 						<div className={styles.statLabel}>APPOINTMENTS</div>
 					</div>
 					<div className={styles.statCard}>
 						<div className={styles.statIcon} style={{ background: "var(--brand-primary)", color: "white" }}>
 							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
 						</div>
-						<div className={styles.statValue}>02</div>
+						<div className={styles.statValue}>{stats.upcomingCount}</div>
 						<div className={styles.statLabel}>UPCOMING</div>
 					</div>
 					<div className={`${styles.statCard} ${styles.statCardGold}`}>
 						<div className={styles.statIcon}>
 							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
 						</div>
-						<div className={styles.statValue}>$1,420</div>
+						<div className={styles.statValue}>${stats.totalSpent.toFixed(2)}</div>
 						<div className={styles.statLabel}>TOTAL SPENT</div>
 					</div>
 					<div className={styles.statCard}>
 						<div className={styles.statIcon}>
 							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
 						</div>
-						<div className={styles.statValue}>08</div>
+						<div className={styles.statValue}>{stats.savedDoctors}</div>
 						<div className={styles.statLabel}>SAVED DOCTORS</div>
 					</div>
 				</div>
+
+				{error ? (
+					<div style={{ marginTop: "12px", color: "#b9383d", fontWeight: 600 }}>{error}</div>
+				) : null}
 
 				<div className={styles.dashboardContent}>
 					<div className={styles.chartCard}>
@@ -66,12 +231,14 @@ const Home = () => {
 							</div>
 						</div>
 						
-						{/* Placeholder for chart */}
+						{loading ? (
+							<div style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>Loading visit trends...</div>
+						) : null}
 						<div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: "10%", padding: "0 5%" }}>
-							{["JAN", "FEB", "MAR", "APR", "MAY", "JUN"].map((month, i) => (
-								<div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", flex: 1 }}>
-									<div style={{ width: "40px", background: i % 2 === 0 ? "rgba(33, 103, 78, 0.1)" : "var(--brand-primary)", height: `${40 + Math.random() * 60}%`, borderRadius: "8px 8px 0 0" }}></div>
-									<div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)" }}>{month}</div>
+							{monthlyVisits.map((item, i) => (
+								<div key={item.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", flex: 1 }}>
+									<div style={{ width: "40px", background: i % 2 === 0 ? "rgba(33, 103, 78, 0.1)" : "var(--brand-primary)", height: `${item.height}%`, borderRadius: "8px 8px 0 0" }}></div>
+									<div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)" }}>{item.label}</div>
 								</div>
 							))}
 						</div>
@@ -80,43 +247,30 @@ const Home = () => {
 					<div className={styles.upcomingCard}>
 						<div className={styles.upcomingHeader}>
 							<h3 style={{ margin: 0, fontSize: "1.2rem" }}>Upcoming<br/>Appointments</h3>
-							<Link to="/appointments" style={{ color: "var(--brand-primary)", textDecoration: "none", fontWeight: 700, fontSize: "0.9rem" }}>View All</Link>
+							<Link to="/home" style={{ color: "var(--brand-primary)", textDecoration: "none", fontWeight: 700, fontSize: "0.9rem" }}>Refresh</Link>
 						</div>
 
 						<div className={styles.upcomingList}>
-							<div className={styles.upcomingItem}>
-								<img src="/images/doctor_portrait.png" alt="Doctor" />
-								<div style={{ flex: 1 }}>
-									<div style={{ fontWeight: 700, color: "var(--bg-dark)" }}>Dr. Marcus Thorne</div>
-									<div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>Cardiology • 45m</div>
+							{upcomingAppointments.slice(0, 3).map((appointment) => (
+								<div className={styles.upcomingItem} key={appointment._id}>
+									<img src="/images/doctor_portrait.png" alt="Doctor" />
+									<div style={{ flex: 1 }}>
+										<div style={{ fontWeight: 700, color: "var(--bg-dark)" }}>
+											{appointment?.doctor?.name || "Assigned Doctor"}
+										</div>
+										<div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+											Status: {appointment?.status || "booked"}
+										</div>
+									</div>
+									<div style={{ textAlign: "right" }}>
+										<div style={{ fontWeight: 700, color: "var(--brand-primary)" }}>{formatDate(appointment?.date)}</div>
+										<div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>{formatTime(appointment)}</div>
+									</div>
 								</div>
-								<div style={{ textAlign: "right" }}>
-									<div style={{ fontWeight: 700, color: "var(--brand-primary)" }}>Oct 12</div>
-									<div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>10:30 AM</div>
-								</div>
-							</div>
-							<div className={styles.upcomingItem}>
-								<img src="https://ui-avatars.com/api/?name=Elena+Rodriguez&background=random" alt="Doctor" />
-								<div style={{ flex: 1 }}>
-									<div style={{ fontWeight: 700, color: "var(--bg-dark)" }}>Dr. Elena Rodriguez</div>
-									<div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>Dermatology • 30m</div>
-								</div>
-								<div style={{ textAlign: "right" }}>
-									<div style={{ fontWeight: 700, color: "var(--brand-primary)" }}>Oct 15</div>
-									<div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>02:15 PM</div>
-								</div>
-							</div>
-							<div className={styles.upcomingItem}>
-								<img src="https://ui-avatars.com/api/?name=Simon+Chen&background=random" alt="Doctor" />
-								<div style={{ flex: 1 }}>
-									<div style={{ fontWeight: 700, color: "var(--bg-dark)" }}>Dr. Simon Chen</div>
-									<div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>General Health • 60m</div>
-								</div>
-								<div style={{ textAlign: "right" }}>
-									<div style={{ fontWeight: 700, color: "var(--brand-primary)" }}>Oct 22</div>
-									<div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>09:00 AM</div>
-								</div>
-							</div>
+							))}
+							{!loading && upcomingAppointments.length === 0 ? (
+								<div style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>No upcoming appointments yet.</div>
+							) : null}
 						</div>
 
 						<div className={styles.healthTip}>
@@ -132,27 +286,20 @@ const Home = () => {
 				<div style={{ marginTop: "40px" }}>
 					<h3 style={{ margin: 0, fontSize: "1.2rem" }}>Recent Records</h3>
 					<div className={styles.recordsGrid}>
-						<div className={styles.recordCard}>
-							<div className={styles.recordIcon}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
-							<div>
-								<div style={{ fontWeight: 700, color: "var(--bg-dark)" }}>Blood Test Results</div>
-								<div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Uploaded 2 days ago • PDF (1.2MB)</div>
+						{records.slice(0, 3).map((record) => (
+							<div className={styles.recordCard} key={record._id}>
+								<div className={styles.recordIcon}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
+								<div>
+									<div style={{ fontWeight: 700, color: "var(--bg-dark)" }}>{record?.title || "Medical Record"}</div>
+									<div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+										{record?.diagnosis || "No diagnosis added"} • {formatDate(record?.createdAt)}
+									</div>
+								</div>
 							</div>
-						</div>
-						<div className={styles.recordCard}>
-							<div className={styles.recordIcon}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg></div>
-							<div>
-								<div style={{ fontWeight: 700, color: "var(--bg-dark)" }}>Vaccination Card</div>
-								<div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Updated Sept 28, 2024</div>
-							</div>
-						</div>
-						<div className={styles.recordCard}>
-							<div className={styles.recordIcon}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></div>
-							<div>
-								<div style={{ fontWeight: 700, color: "var(--bg-dark)" }}>Chest X-Ray</div>
-								<div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Aug 14, 2024 • Clinical Image</div>
-							</div>
-						</div>
+						))}
+						{!loading && records.length === 0 ? (
+							<div style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>No medical records available yet.</div>
+						) : null}
 					</div>
 				</div>
 		</DashboardLayout>

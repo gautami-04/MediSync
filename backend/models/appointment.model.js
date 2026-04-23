@@ -5,11 +5,11 @@ const appointmentSchema = new mongoose.Schema({
   doctor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   date: String,
   time: String,
-  status: {
-    type: String,
-    enum: ['booked', 'cancelled'],
-    default: 'booked',
-  },
+ status: {
+  type: String,
+  enum: ['booked', 'cancelled', 'completed'],
+  default: 'booked',
+},
 });
 
 module.exports = mongoose.model('Appointment', appointmentSchema);

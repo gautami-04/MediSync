@@ -164,13 +164,19 @@ const Home = () => {
 		});
 
 		const values = Array.from(monthBuckets.values());
+		const keys = Array.from(monthBuckets.keys());
 		const maxValue = Math.max(...values, 1);
 
-		return values.map((count, index) => ({
-			label: MONTH_LABELS[index],
-			count,
-			height: Math.max(20, Math.round((count / maxValue) * 90)),
-		}));
+		return values.map((count, index) => {
+			const [y, m] = keys[index].split("-");
+			const d = new Date(parseInt(y, 10), parseInt(m, 10), 1);
+			const label = d.toLocaleDateString(undefined, { month: "short" }).toUpperCase();
+			return {
+				label,
+				count,
+				height: Math.max(20, Math.round((count / maxValue) * 90)),
+			};
+		});
 	}, [appointments]);
 
 	return (
@@ -202,7 +208,7 @@ const Home = () => {
 						<div className={styles.statIcon}>
 							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
 						</div>
-						<div className={styles.statValue}>${stats.totalSpent.toFixed(2)}</div>
+						<div className={styles.statValue}>₹{stats.totalSpent.toFixed(2)}</div>
 						<div className={styles.statLabel}>TOTAL SPENT</div>
 					</div>
 					<div className={styles.statCard}>

@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Button from "../../components/Button";
+import useAuth from "../../hooks/useAuth";
 import { sendOtp, verifyOtp } from "../../services/authService";
 import { validateOtp } from "../../utils/validators";
 import styles from "./AuthPages.module.css";
 
 const OTP_LENGTH = 6;
+const PENDING_REG_EMAIL_KEY = "medisync_pending_registration_email";
 
 const OtpVerification = () => {
   const [otpDigits, setOtpDigits] = useState(() => Array(OTP_LENGTH).fill(""));
@@ -15,8 +17,9 @@ const OtpVerification = () => {
   const [resendCountdown, setResendCountdown] = useState(30);
   const location = useLocation();
   const navigate = useNavigate();
+  const { completeAuthSession } = useAuth();
   const inputRefs = useRef([]);
-  const email = location.state?.email || "";
+  const email = location.state?.email || localStorage.getItem(PENDING_REG_EMAIL_KEY) || "";
   const otp = otpDigits.join("");
 
   useEffect(() => {
@@ -92,14 +95,17 @@ const OtpVerification = () => {
     setAlert(null);
 
     try {
-      await verifyOtp({ otp, email, purpose: "registration" });
+      const authData = await verifyOtp({ otp, email, purpose: "registration" });
+      const authenticatedUser = completeAuthSession(authData, { email, role: "patient" });
+      localStorage.removeItem(PENDING_REG_EMAIL_KEY);
 
       setAlert({
         type: "success",
-        message: "OTP verified successfully. You can now login.",
+        message: "OTP verified successfully. Completing your onboarding...",
       });
 
-      navigate("/login");
+      const nextPath = authenticatedUser?.role === "patient" ? "/onboarding-survey" : "/home";
+      navigate(nextPath, { replace: true });
     } catch (requestError) {
       setAlert({
         type: "error",
@@ -225,7 +231,7 @@ const OtpVerification = () => {
           </form>
 
           <p className={styles.footerText}>
-            Return to <Link to="/login">Login</Link>
+            Need to change email? <Link to="/register">Go to Register</Link>
           </p>
         </section>
       </div>

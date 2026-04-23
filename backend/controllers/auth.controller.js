@@ -8,7 +8,6 @@ const { sendOtpEmail } = require('../services/email.service');
 const OTP_VALIDITY_MS = 10 * 60 * 1000;
 const PASSWORD_RESET_OTP_VERIFIED_VALIDITY_MS = 10 * 60 * 1000;
 
-// Generate token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: '7d',
@@ -23,7 +22,6 @@ const issueOtpForRecord = async (record) => {
   return sendOtpEmail(record.email, otp);
 };
 
-// Register
 exports.register = async (req, res) => {
   try {
     let { name, fullName, email, password, role, phone } = req.body;
@@ -68,8 +66,6 @@ exports.register = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-// Login
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;

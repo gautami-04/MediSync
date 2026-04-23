@@ -134,7 +134,7 @@ const Register = () => {
 						</div>
 
 						<div className={styles.roleTabs}>
-							{["Patient", "Doctor", "Admin"].map(r => (
+							{["Patient", "Doctor"].map(r => (
 								<button
 									key={r}
 									type="button"

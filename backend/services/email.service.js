@@ -28,7 +28,6 @@ const fallbackToConsoleOtp = (to, otp, reason) => {
 		delivered: false,
 		fallback: true,
 		reason,
-		otp,
 	};
 };
 

@@ -9,10 +9,12 @@ const {
 	getMyDoctorProfile,
 	upsertDoctorProfile,
 	deleteDoctorProfile,
+	getDoctorStats,
 } = require('../controllers/doctor.controller');
 
 router.get('/', getAllDoctors);
 router.get('/profile/me', protect, authorizeRoles('doctor', 'admin'), getMyDoctorProfile);
+router.get('/profile/me/stats', protect, authorizeRoles('doctor', 'admin'), getDoctorStats);
 router.post('/profile', protect, authorizeRoles('doctor', 'admin'), upsertDoctorProfile);
 router.put('/profile', protect, authorizeRoles('doctor', 'admin'), upsertDoctorProfile);
 router.delete('/profile/:id', protect, authorizeRoles('doctor', 'admin'), deleteDoctorProfile);

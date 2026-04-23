@@ -1,4 +1,8 @@
 const Doctor = require('../models/doctor.model');
+const Appointment = require('../models/appointment.model');
+const Payment = require('../models/payment.model');
+const PendingUser = require('../models/pendingUser.model');
+const mongoose = require('mongoose');
 
 const getAllDoctors = async (req, res) => {
 	try {
@@ -125,10 +129,37 @@ const deleteDoctorProfile = async (req, res) => {
 	}
 };
 
+const getDoctorStats = async (req, res) => {
+	try {
+		const doctorId = req.user._id;
+
+		const today = new Date().toISOString().split('T')[0];
+
+		const todaysAppointments = await Appointment.countDocuments({ doctor: doctorId, date: today });
+
+		const patients = await Appointment.distinct('patient', { doctor: doctorId });
+		const totalPatients = patients.length;
+
+		const earningsAgg = await Payment.aggregate([
+			{ $match: { user: mongoose.Types.ObjectId(doctorId), status: 'paid' } },
+			{ $group: { _id: null, total: { $sum: '$amount' } } },
+		]);
+
+		const totalEarnings = (earningsAgg[0] && earningsAgg[0].total) || 0;
+
+		const pendingApprovals = await PendingUser.countDocuments();
+
+		res.json({ todaysAppointments, totalPatients, totalEarnings, pendingApprovals });
+	} catch (error) {
+		res.status(500).json({ message: error.message });
+	}
+};
+
 module.exports = {
 	getAllDoctors,
 	getDoctorById,
 	getMyDoctorProfile,
 	upsertDoctorProfile,
 	deleteDoctorProfile,
+	getDoctorStats,
 };

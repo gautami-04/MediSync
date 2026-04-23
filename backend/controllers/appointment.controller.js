@@ -1,4 +1,5 @@
 const Appointment = require('../models/appointment.model');
+const { createNotification } = require('../services/notification.service');
 
 //book appointment
 exports.bookAppointment = async (req, res) => {
@@ -20,6 +21,14 @@ exports.bookAppointment = async (req, res) => {
       doctor: doctorId,
       date,
       time,
+    });
+
+    await createNotification({
+      recipient: doctorId,
+      type: 'appointment',
+      title: 'New Appointment Booked',
+      message: `A new appointment has been booked for ${date} at ${time}.`,
+      data: { appointmentId: appointment._id }
     });
 
     res.status(201).json(appointment);
@@ -53,6 +62,22 @@ exports.cancelAppointment = async (req, res) => {
     appointment.status = 'cancelled';
     await appointment.save();
 
+    await createNotification({
+      recipient: appointment.doctor,
+      type: 'appointment',
+      title: 'Appointment Cancelled',
+      message: `Appointment on ${appointment.date} at ${appointment.time} has been cancelled.`,
+      data: { appointmentId: appointment._id }
+    });
+
+    await createNotification({
+      recipient: appointment.patient,
+      type: 'appointment',
+      title: 'Appointment Cancelled',
+      message: `Your appointment on ${appointment.date} at ${appointment.time} has been cancelled.`,
+      data: { appointmentId: appointment._id }
+    });
+
     res.json({ message: 'Appointment cancelled' });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -82,23 +107,41 @@ exports.rescheduleAppointment = async (req, res) => {
       return res.status(404).json({ message: 'Appointment not found' });
     }
 
+    const isPatient = appointment.patient.toString() === req.user._id.toString();
+    const isDoctor = appointment.doctor.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isPatient && !isDoctor && !isAdmin) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
     // Check if new slot is already booked
     const exists = await Appointment.findOne({
       doctor: appointment.doctor,
       date,
       time,
       status: { $ne: 'cancelled' },
+      _id: { $ne: appointment._id }
     });
 
     if (exists) {
       return res.status(400).json({ message: 'Requested slot is already booked' });
     }
 
-    appointment.date = date;
-    appointment.time = time;
-    appointment.rescheduleReason = reason;
+    if (date) appointment.date = date;
+    if (time) appointment.time = time;
+    if (reason) appointment.rescheduleReason = reason;
     appointment.status = 'rescheduled';
     await appointment.save();
+
+    const recipient = isPatient ? appointment.doctor : appointment.patient;
+    await createNotification({
+      recipient,
+      type: 'appointment',
+      title: 'Appointment Rescheduled',
+      message: `Appointment rescheduled to ${appointment.date} at ${appointment.time}.`,
+      data: { appointmentId: appointment._id }
+    });
 
     res.json({ message: 'Appointment rescheduled successfully', appointment });
   } catch (error) {
@@ -126,8 +169,18 @@ exports.updateAppointmentStatus = async (req, res) => {
     if (diagnosis) appointment.diagnosis = diagnosis;
 
     await appointment.save();
+
+    // Notify patient about status change
+    await createNotification({
+      recipient: appointment.patient,
+      type: 'appointment',
+      title: 'Appointment Updated',
+      message: `Your appointment status has been updated to ${appointment.status}.`,
+      data: { appointmentId: appointment._id }
+    });
+
     res.json({ message: 'Appointment updated successfully', appointment });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-};
+};

@@ -9,6 +9,7 @@ import ForgotPassword from "../pages/auth/ForgotPassword";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import OtpVerification from "../pages/auth/OtpVerification";
+import BookAppointment from "../pages/patient/BookAppointment";
 
 const AuthRoutes = () => {
 	const { isAuthenticated } = useAuth();
@@ -26,6 +27,7 @@ const AuthRoutes = () => {
         <Route path="/home" element={<Home />} />
         <Route path="/payments" element={<Payments />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/book-appointment" element={<BookAppointment />} />
       </Route>
 
 			<Route

@@ -19,3 +19,18 @@ export const verifyOtp = async (payload) => {
   const response = await api.post("/api/auth/verify-otp", payload);
   return response.data;
 };
+
+export const requestPasswordReset = async (payload) => {
+  const response = await api.post("/api/auth/request-password-reset", payload);
+  return response.data;
+};
+
+export const verifyResetOtp = async (payload) => {
+  const response = await api.post("/api/auth/verify-reset-otp", payload);
+  return response.data;
+};
+
+export const resetPassword = async (payload) => {
+  const response = await api.post("/api/auth/reset-password", payload);
+  return response.data;
+};

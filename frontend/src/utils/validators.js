@@ -39,6 +39,12 @@ export const validateRegisterForm = (form, role) => {
 		errors.password = "Password must be at least 8 characters.";
 	}
 
+	// Enforce password complexity: one uppercase, one lowercase, one number, one special
+	const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+	if (hasText(form.password) && !PASSWORD_REGEX.test(form.password)) {
+		errors.password = "Password must include uppercase, lowercase, number, and special character.";
+	}
+
 	if (!hasText(form.confirmPassword)) {
 		errors.confirmPassword = "Please confirm your password.";
 	} else if (form.password !== form.confirmPassword) {
@@ -109,6 +115,11 @@ export const validatePasswordReset = (form) => {
 		errors.newPassword = "New password is required.";
 	} else if (String(form.newPassword).length < 8) {
 		errors.newPassword = "Password must be at least 8 characters.";
+	}
+
+	const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+	if (hasText(form.newPassword) && !PASSWORD_REGEX.test(form.newPassword)) {
+		errors.newPassword = "Password must include uppercase, lowercase, number, and special character.";
 	}
 
 	if (!hasText(form.confirmPassword)) {

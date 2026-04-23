@@ -76,15 +76,13 @@ const ForgotPassword = () => {
 		setAlert(null);
 
 		try {
-			const response = await sendOtp({ email: email.trim(), purpose: "reset-password" });
+			await sendOtp({ email: email.trim(), purpose: "reset-password" });
 			setOtpDigits(Array(OTP_LENGTH).fill(""));
 			setResendCountdown(30);
 			setStep(2);
 			setAlert({
 				type: "success",
-				message: response?.devOtp
-					? `User found. Dev OTP: ${response.devOtp}`
-					: "User found. OTP sent to your email.",
+				message: "User found. OTP sent to your email.",
 			});
 		} catch (error) {
 			setAlert({
@@ -141,14 +139,12 @@ const ForgotPassword = () => {
 		setAlert(null);
 
 		try {
-			const response = await sendOtp({ email: email.trim(), purpose: "reset-password" });
+			await sendOtp({ email: email.trim(), purpose: "reset-password" });
 			setOtpDigits(Array(OTP_LENGTH).fill(""));
 			setResendCountdown(30);
 			setAlert({
 				type: "success",
-				message: response?.devOtp
-					? `A new OTP is ready. Dev OTP: ${response.devOtp}`
-					: "A new OTP has been sent.",
+				message: "A new OTP has been sent.",
 			});
 		} catch (error) {
 			setAlert({

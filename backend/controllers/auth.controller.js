@@ -7,7 +7,6 @@ const { sendOtpEmail } = require('../services/email.service');
 
 const OTP_VALIDITY_MS = 10 * 60 * 1000;
 const PASSWORD_RESET_OTP_VERIFIED_VALIDITY_MS = 10 * 60 * 1000;
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 // Generate token
 const generateToken = (id) => {
@@ -64,9 +63,6 @@ exports.register = async (req, res) => {
         ? 'Registration started. OTP generated in server logs (email fallback mode).'
         : 'Registration started. OTP sent to email.',
       email: pendingUser.email,
-      ...(delivery?.fallback && !IS_PRODUCTION && delivery?.otp
-        ? { devOtp: delivery.otp }
-        : {}),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -122,9 +118,6 @@ exports.sendOtp = async (req, res) => {
           message: delivery?.fallback
             ? 'OTP generated in server logs (email fallback mode).'
             : 'OTP sent successfully to email.',
-          ...(delivery?.fallback && !IS_PRODUCTION && delivery?.otp
-            ? { devOtp: delivery.otp }
-            : {}),
         });
       }
 
@@ -139,9 +132,6 @@ exports.sendOtp = async (req, res) => {
         message: delivery?.fallback
           ? 'OTP generated in server logs (email fallback mode).'
           : 'OTP sent successfully to email.',
-        ...(delivery?.fallback && !IS_PRODUCTION && delivery?.otp
-          ? { devOtp: delivery.otp }
-          : {}),
       });
     }
 
@@ -158,9 +148,6 @@ exports.sendOtp = async (req, res) => {
         message: delivery?.fallback
           ? 'OTP generated in server logs (email fallback mode).'
           : 'OTP sent successfully to email.',
-        ...(delivery?.fallback && !IS_PRODUCTION && delivery?.otp
-          ? { devOtp: delivery.otp }
-          : {}),
       });
     }
 

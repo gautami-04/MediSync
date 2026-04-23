@@ -78,18 +78,15 @@ const Register = () => {
 		setAlert(null);
 
 		try {
-			const response = await registerUser(payload);
-			const devOtp = response?.devOtp || "";
+			await registerUser(payload);
 
 			setAlert({
 				type: "success",
-				message: devOtp
-					? `Registration started. Dev OTP: ${devOtp}`
-					: "Registration successful. Please verify your OTP.",
+				message: "Registration successful. Please verify your OTP from your email.",
 			});
 
 			navigate("/verify-otp", {
-				state: { email: payload.email, devOtp },
+				state: { email: payload.email },
 			});
 		} catch (error) {
 			setAlert({

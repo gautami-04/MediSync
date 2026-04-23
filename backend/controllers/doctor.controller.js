@@ -141,7 +141,7 @@ const getDoctorStats = async (req, res) => {
 		const totalPatients = patients.length;
 
 		const earningsAgg = await Payment.aggregate([
-			{ $match: { user: mongoose.Types.ObjectId(doctorId), status: 'paid' } },
+			{ $match: { user: new mongoose.Types.ObjectId(doctorId), status: 'paid' } },
 			{ $group: { _id: null, total: { $sum: '$amount' } } },
 		]);
 

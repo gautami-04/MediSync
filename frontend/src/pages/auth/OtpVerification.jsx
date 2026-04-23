@@ -82,8 +82,14 @@ const OtpVerification = () => {
     inputRefs.current[focusIndex]?.focus();
   };
 
+  useEffect(() => {
+    if (otp.length === OTP_LENGTH && !loading) {
+      handleVerify();
+    }
+  }, [otp, loading]);
+
   const handleVerify = async (event) => {
-    event.preventDefault();
+    if (event) event.preventDefault();
     const otpError = validateOtp(otp);
 
     if (otpError) {
@@ -104,7 +110,7 @@ const OtpVerification = () => {
         message: "OTP verified successfully. Completing your onboarding...",
       });
 
-      const nextPath = authenticatedUser?.role === "patient" ? "/onboarding-survey" : "/home";
+      const nextPath = authenticatedUser?.role === "patient" ? "/onboarding-survey" : "/dashboard";
       navigate(nextPath, { replace: true });
     } catch (requestError) {
       setAlert({

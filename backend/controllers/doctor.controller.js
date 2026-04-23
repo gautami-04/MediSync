@@ -2,7 +2,29 @@ const Doctor = require('../models/doctor.model');
 
 const getAllDoctors = async (req, res) => {
 	try {
-		const doctors = await Doctor.find().populate('user', 'name email role');
+		const { specialization, hospital, minFee, maxFee, search } = req.query;
+		let query = { isApproved: true };
+
+		if (specialization) {
+			query.specialization = { $regex: specialization, $options: 'i' };
+		}
+		if (hospital) {
+			query.hospital = { $regex: hospital, $options: 'i' };
+		}
+		if (minFee || maxFee) {
+			query.consultationFee = {};
+			if (minFee) query.consultationFee.$gte = Number(minFee);
+			if (maxFee) query.consultationFee.$lte = Number(maxFee);
+		}
+		if (search) {
+			query.$or = [
+				{ specialization: { $regex: search, $options: 'i' } },
+				{ hospital: { $regex: search, $options: 'i' } },
+				{ bio: { $regex: search, $options: 'i' } },
+			];
+		}
+
+		const doctors = await Doctor.find(query).populate('user', 'name email role');
 		res.json(doctors);
 	} catch (error) {
 		res.status(500).json({ message: error.message });

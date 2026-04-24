@@ -8,6 +8,8 @@ const doctorRoutes = require('./routes/doctor.routes');
 const reviewRoutes = require('./routes/review.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const medicalRecordRoutes = require('./routes/medicalRecord.routes');
+const patientRoutes = require('./routes/patient.routes');
+const adminRoutes = require('./routes/admin.routes');
 
 app.use(cors());
 app.use(express.json());
@@ -23,5 +25,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/medical-records', medicalRecordRoutes);
+app.use('/api/patients', patientRoutes);
+app.use('/api/admin', adminRoutes);
 
 module.exports = app;

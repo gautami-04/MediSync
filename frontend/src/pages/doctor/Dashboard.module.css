@@ -1,0 +1,228 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.headerTitle {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--bg-dark);
+}
+
+.headerSubtitle {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.statCard {
+  background: white;
+  padding: 24px;
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+}
+
+.statCardAccent {
+  background: var(--bg-dark);
+  color: white;
+}
+
+.statIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--bg-1);
+  color: var(--brand-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.statCardAccent .statIcon {
+  background: rgba(255,255,255,0.15);
+  color: white;
+}
+
+.statValue {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.statLabel {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.statCardAccent .statLabel {
+  color: rgba(255,255,255,0.7);
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 24px;
+}
+
+.card {
+  background: white;
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+}
+
+.cardTitle {
+  margin: 0 0 24px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--bg-dark);
+}
+
+.scheduleItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.scheduleItem:last-child {
+  border-bottom: none;
+}
+
+.scheduleTime {
+  font-weight: 700;
+  color: var(--brand-primary);
+  font-size: 0.9rem;
+  min-width: 80px;
+}
+
+.scheduleDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--brand-primary);
+  flex-shrink: 0;
+}
+
+.scheduleDotPending {
+  background: #f59e0b;
+}
+
+.scheduleInfo {
+  flex: 1;
+}
+
+.scheduleName {
+  font-weight: 600;
+  color: var(--bg-dark);
+}
+
+.scheduleType {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.statusPill {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.statusBooked { background: #e3f2fd; color: #1565c0; }
+.statusConfirmed { background: #e8f5e9; color: #2e7d32; }
+.statusCompleted { background: #f3e5f5; color: #7b1fa2; }
+.statusCancelled { background: #fce4ec; color: #c62828; }
+
+.quickActions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.quickAction {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: var(--input-bg);
+  border: none;
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.quickAction:hover {
+  background: var(--brand-primary);
+  color: white;
+  transform: translateX(4px);
+}
+
+.quickActionIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: white;
+  color: var(--brand-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.quickAction:hover .quickActionIcon {
+  background: rgba(255,255,255,0.2);
+  color: white;
+}
+
+.emptyMsg {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  padding: 16px 0;
+}
+
+@media (max-width: 1200px) {
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 992px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+}

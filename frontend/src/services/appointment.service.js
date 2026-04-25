@@ -5,27 +5,32 @@ export const getMyAppointments = async () => {
 	return response.data;
 };
 
+export const bookAppointment = async (data) => {
+	const response = await api.post("/api/appointments/book", data);
+	return response.data;
+};
+
 export const cancelAppointment = async (appointmentId) => {
 	const response = await api.put(`/api/appointments/cancel/${appointmentId}`);
 	return response.data;
 };
 
-export const getAllDoctors = async () => {
-	const response = await api.get("/api/doctors");
-	return response.data;
-};
-
-export const bookAppointment = async (payload) => {
-	const response = await api.post("/api/appointments/book", payload);
+export const rescheduleAppointment = async (appointmentId, data) => {
+	const response = await api.put(`/api/appointments/reschedule/${appointmentId}`, data);
 	return response.data;
 };
 
 export const getDoctorAppointments = async () => {
-	const response = await api.get('/api/appointments/doctor');
+	const response = await api.get("/api/appointments/doctor");
 	return response.data;
 };
 
-export const rescheduleAppointment = async (appointmentId, payload) => {
-	const response = await api.put(`/api/appointments/${appointmentId}/reschedule`, payload);
+export const getAllAppointments = async () => {
+	const response = await api.get("/api/appointments/all");
+	return response.data;
+};
+
+export const updateAppointmentStatus = async (appointmentId, status, notes) => {
+	const response = await api.put(`/api/appointments/status/${appointmentId}`, { status, notes });
 	return response.data;
 };

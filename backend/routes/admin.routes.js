@@ -2,12 +2,13 @@ const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/admin.controller');
 const protect = require('../middleware/auth.middleware');
-const authorize = require('../middleware/role.middleware');
+const authorizeRoles = require('../middleware/role.middleware');
 
 // All routes require admin role
 router.use(protect);
-router.use(authorize('admin'));
+router.use(authorizeRoles('admin'));
 
+router.get('/dashboard', adminController.getAdminDashboardStats);
 router.get('/users', adminController.getAllUsers);
 router.get('/doctors', adminController.getAllDoctors);
 router.put('/doctors/:id/approve', adminController.approveDoctor);

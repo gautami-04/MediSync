@@ -23,6 +23,7 @@ const issueOtpForRecord = async (record) => {
   return sendOtpEmail(record.email, otp);
 };
 
+// ================= REGISTER =================
 exports.register = async (req, res) => {
   try {
     let { name, fullName, email, password, role, phone } = req.body;
@@ -63,10 +64,13 @@ exports.register = async (req, res) => {
         : 'Registration started. OTP sent to email.',
       email: pendingUser.email,
     });
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
+// ================= LOGIN =================
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -74,6 +78,7 @@ exports.login = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && (await bcrypt.compare(password, user.password))) {
+
       if (!user.isEmailVerified) {
         return res.status(403).json({
           message: 'Please verify your email OTP before login.',
@@ -87,6 +92,7 @@ exports.login = async (req, res) => {
         role: user.role,
         token: generateToken(user._id),
       });
+
     } else {
       res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -95,7 +101,7 @@ exports.login = async (req, res) => {
   }
 };
 
-// Send OTP (new or resend)
+// ================= SEND OTP =================
 exports.sendOtp = async (req, res) => {
   try {
     const { purpose = 'registration' } = req.body;
@@ -154,7 +160,7 @@ exports.sendOtp = async (req, res) => {
   }
 };
 
-// Verify OTP
+// ================= VERIFY OTP =================
 exports.verifyOtp = async (req, res) => {
   try {
     const { otp, purpose = 'registration' } = req.body;

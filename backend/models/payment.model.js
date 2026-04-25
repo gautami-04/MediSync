@@ -1,17 +1,38 @@
 const mongoose = require('mongoose');
 
 const paymentSchema = new mongoose.Schema(
-	{
-		user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-		patient: { type: mongoose.Schema.Types.ObjectId, ref: 'Patient' },
-		appointment: { type: mongoose.Schema.Types.ObjectId, ref: 'Appointment' },
-		amount: { type: Number, required: true, default: 0 },
-		currency: { type: String, default: 'INR' },
-		method: { type: String, trim: true },
-		status: { type: String, enum: ['paid', 'pending', 'failed', 'refunded'], default: 'paid' },
-		metadata: { type: Object },
-	},
-	{ timestamps: true }
+  {
+    patient: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Patient',
+      required: true,
+      index: true,
+    },
+    appointment: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Appointment',
+      default: null,
+    },
+    doctorName: { type: String, trim: true, default: '' },
+    specialty: { type: String, trim: true, default: '' },
+    amount: { type: Number, required: true, min: 0, default: 0 },
+    currency: { type: String, default: 'INR' },
+    method: {
+      type: String,
+      enum: ['card', 'bank', 'cash', 'upi', 'other'],
+      default: 'card',
+    },
+    status: {
+      type: String,
+      enum: ['paid', 'pending', 'failed', 'refunded'],
+      default: 'pending',
+    },
+    referenceId: { type: String, required: true, unique: true },
+    paidAt: { type: Date, default: null },
+    notes: { type: String, trim: true, default: '' },
+    metadata: { type: Object },
+  },
+  { timestamps: true }
 );
 
 module.exports = mongoose.models.Payment || mongoose.model('Payment', paymentSchema);

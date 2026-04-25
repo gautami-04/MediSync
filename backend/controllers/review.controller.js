@@ -4,6 +4,18 @@ exports.addReview = async (req, res) => {
   try {
     const { doctorId, rating, comment } = req.body;
 
+    // check if patient had a completed appointment with this doctor
+    const Appointment = require('../models/appointment.model');
+    const appointment = await Appointment.findOne({
+      patient: req.user._id,
+      doctor: doctorId,
+      status: 'completed'
+    });
+
+    if (!appointment) {
+      return res.status(403).json({ message: 'You can only review doctors you have had a completed appointment with' });
+    }
+
     // prevent duplicate review
     const existing = await Review.findOne({
       patient: req.user._id,

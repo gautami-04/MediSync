@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 
 const prescriptionSchema = new mongoose.Schema(
 	{
+		appointment: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'Appointment',
+			required: true,
+		},
 		doctor: {
 			type: mongoose.Schema.Types.ObjectId,
 			ref: 'User',
@@ -12,22 +17,18 @@ const prescriptionSchema = new mongoose.Schema(
 			ref: 'User',
 			required: true,
 		},
-		appointment: {
-			type: mongoose.Schema.Types.ObjectId,
-			ref: 'Appointment',
-		},
-		medicines: [
+		medications: [
 			{
 				name: { type: String, required: true },
 				dosage: { type: String, required: true },
+				frequency: { type: String },
 				duration: { type: String, required: true },
+				instructions: { type: String },
 			},
 		],
+		advice: { type: String },
 		notes: { type: String },
-		issuedAt: {
-			type: Date,
-			default: Date.now,
-		},
+		date: { type: Date, default: Date.now },
 	},
 	{ timestamps: true }
 );

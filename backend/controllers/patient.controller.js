@@ -1,38 +1,9 @@
 const mongoose = require('mongoose');
-let Patient = require('../models/patient.model');
+const Patient = require('../models/patient.model');
 const Appointment = require('../models/appointment.model');
 const MedicalRecord = require('../models/medicalRecord.model');
 const User = require('../models/user.model');
 const Payment = require('../models/payment.model');
-
-// Fallback model so controller can still run if patient.model.js is not implemented yet.
-if (!Patient || typeof Patient.findOne !== 'function') {
-	const patientSchema = new mongoose.Schema(
-		{
-			user: {
-				type: mongoose.Schema.Types.ObjectId,
-				ref: 'User',
-				required: true,
-				unique: true,
-			},
-			phone: { type: String, trim: true },
-			gender: {
-				type: String,
-				enum: ['male', 'female', 'other', 'prefer_not_to_say'],
-			},
-			dateOfBirth: { type: Date },
-			bloodGroup: { type: String, trim: true },
-			allergies: [{ type: String, trim: true }],
-			chronicConditions: [{ type: String, trim: true }],
-			emergencyContactName: { type: String, trim: true },
-			emergencyContactPhone: { type: String, trim: true },
-			address: { type: String, trim: true },
-		},
-		{ timestamps: true }
-	);
-
-	Patient = mongoose.models.Patient || mongoose.model('Patient', patientSchema);
-}
 
 const getAppointmentDoctorPopulate = () => {
 	const doctorPath = Appointment.schema.path('doctor');

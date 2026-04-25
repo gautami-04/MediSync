@@ -14,7 +14,7 @@ const {
 } = require('../controllers/appointment.controller');
 
 // Patient routes
-router.post('/book', protect, bookAppointment);
+router.post('/book', protect, authorizeRoles('patient'), bookAppointment);
 router.get('/my', protect, getMyAppointments);
 router.put('/cancel/:id', protect, cancelAppointment);
 router.put('/reschedule/:id', protect, rescheduleAppointment);

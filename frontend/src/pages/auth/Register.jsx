@@ -6,6 +6,9 @@ import { registerUser } from "../../services/authService";
 import { validateRegisterForm } from "../../utils/validators";
 import styles from "./AuthPages.module.css";
 
+const visibleRegisterFields = ["fullName", "email", "password", "confirmPassword"];
+const PENDING_REG_EMAIL_KEY = "medisync_pending_registration_email";
+
 const initialForm = {
 	fullName: "",
 	email: "",
@@ -38,6 +41,23 @@ const Register = () => {
 	const handleSubmit = async (event) => {
 		event.preventDefault();
 
+		const fullValidationErrors = validateRegisterForm(form, role);
+		const validationErrors = Object.fromEntries(
+			Object.entries(fullValidationErrors).filter(([field]) =>
+				visibleRegisterFields.includes(field)
+			)
+		);
+
+		if (!String(form.phone || "").trim()) {
+			validationErrors.phone = "Phone number is required.";
+		}
+
+		setErrors(validationErrors);
+
+		if (Object.keys(validationErrors).length > 0) {
+			return;
+		}
+
 		if (!agreed) {
 			setErrors(prev => ({...prev, agree: "You must agree to the terms"}));
 			return;
@@ -60,10 +80,11 @@ const Register = () => {
 
 		try {
 			await registerUser(payload);
+			localStorage.setItem(PENDING_REG_EMAIL_KEY, payload.email);
 
 			setAlert({
 				type: "success",
-				message: "Registration successful. Please verify your OTP.",
+				message: "Registration successful. Please verify your OTP from your email.",
 			});
 
 			navigate("/verify-otp", {
@@ -105,15 +126,15 @@ const Register = () => {
 						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
 							<h1 style={{ fontSize: "2.5rem", margin: "8px 0 0", color: "var(--bg-dark)", fontWeight: 700 }}>Create your account</h1>
 							<div style={{ textAlign: "right" }}>
-								<div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: 600, marginBottom: "8px" }}>Step 1 of 2</div>
+								<div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: 600, marginBottom: "8px" }}>Step 1 of 3</div>
 								<div style={{ width: "100px", height: "4px", background: "var(--input-bg)", borderRadius: "2px", display: "flex" }}>
-									<div style={{ width: "50%", height: "100%", background: "var(--brand-primary)", borderRadius: "2px" }}></div>
+									<div style={{ width: "33%", height: "100%", background: "var(--brand-primary)", borderRadius: "2px" }}></div>
 								</div>
 							</div>
 						</div>
 
 						<div className={styles.roleTabs}>
-							{["Patient", "Doctor", "Admin"].map(r => (
+							{["Patient", "Doctor"].map(r => (
 								<button
 									key={r}
 									type="button"
@@ -199,7 +220,7 @@ const Register = () => {
 								</div>
 								<div style={{ width: "200px" }}>
 									<Button type="submit" loading={loading}>
-										Continue to Step 2 &rarr;
+										Continue to OTP &rarr;
 									</Button>
 								</div>
 							</div>

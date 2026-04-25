@@ -59,7 +59,7 @@ const PatientAppointments = () => {
 	const loadDoctors = useCallback(async () => {
 		try {
 			const data = await getAllDoctors();
-			setDoctors(Array.isArray(data) ? data : []);
+			setDoctors(Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []);
 		} catch {
 			setDoctors([]);
 		}

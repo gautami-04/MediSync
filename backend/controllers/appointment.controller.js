@@ -1,5 +1,6 @@
 const Appointment = require('../models/appointment.model');
 const Doctor = require('../models/doctor.model');
+const { createNotification } = require('../services/notification.service');
 
 // Book appointment (patient)
 exports.bookAppointment = async (req, res) => {
@@ -33,8 +34,22 @@ exports.bookAppointment = async (req, res) => {
       consultationFee = doctorProfile.consultationFee || 0;
     }
 
+    const patientId = req.user._id;
+
+    // Check if patient already has an appointment at this time
+    const patientConflict = await Appointment.findOne({
+      patient: patientId,
+      date,
+      time,
+      status: { $ne: 'cancelled' }
+    });
+
+    if (patientConflict) {
+      return res.status(400).json({ message: 'You already have an appointment at this time' });
+    }
+
     const appointment = await Appointment.create({
-      patient: req.user._id,
+      patient: patientId,
       doctor: doctorId,
       date,
       time,
@@ -48,6 +63,14 @@ exports.bookAppointment = async (req, res) => {
         populate: { path: 'user', select: 'name email' },
       })
       .populate('patient', 'name email');
+
+    await createNotification({
+      recipient: doctorId,
+      type: 'appointment',
+      title: 'New Appointment Booked',
+      message: `A new appointment has been booked for ${date} at ${time}.`,
+      data: { appointmentId: appointment._id }
+    });
 
     res.status(201).json(populated);
   } catch (error) {
@@ -82,18 +105,21 @@ exports.cancelAppointment = async (req, res) => {
       return res.status(404).json({ message: 'Appointment not found' });
     }
 
-    const isOwner = appointment.patient.toString() === req.user._id.toString();
-    const isAdmin = req.user.role === 'admin';
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-
     if (appointment.status === 'cancelled') {
       return res.status(400).json({ message: 'Appointment is already cancelled' });
     }
 
     if (appointment.status === 'completed') {
       return res.status(400).json({ message: 'Cannot cancel a completed appointment' });
+    }
+
+    // Verify ownership (Patient or Doctor)
+    const isPatient = appointment.patient.toString() === req.user._id.toString();
+    const isDoctor = appointment.doctor.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isPatient && !isDoctor && !isAdmin) {
+      return res.status(403).json({ message: 'Access denied' });
     }
 
     appointment.status = 'cancelled';
@@ -105,6 +131,24 @@ exports.cancelAppointment = async (req, res) => {
         populate: { path: 'user', select: 'name email' },
       })
       .populate('patient', 'name email');
+
+    if (isPatient) {
+      await createNotification({
+        recipient: appointment.doctor,
+        type: 'appointment',
+        title: 'Appointment Cancelled',
+        message: `Appointment on ${appointment.date} at ${appointment.time} has been cancelled.`,
+        data: { appointmentId: appointment._id }
+      });
+    } else if (isDoctor) {
+      await createNotification({
+        recipient: appointment.patient,
+        type: 'appointment',
+        title: 'Appointment Cancelled',
+        message: `Your appointment on ${appointment.date} at ${appointment.time} has been cancelled.`,
+        data: { appointmentId: appointment._id }
+      });
+    }
 
     res.json({ message: 'Appointment cancelled', appointment: populated });
   } catch (error) {
@@ -136,10 +180,10 @@ exports.getDoctorAppointments = async (req, res) => {
 // Update appointment status (doctor / admin)
 exports.updateAppointmentStatus = async (req, res) => {
   try {
-    const { status, notes } = req.body;
+    const { status, notes, diagnosis } = req.body;
     const validStatuses = ['confirmed', 'completed', 'cancelled', 'rescheduled'];
 
-    if (!validStatuses.includes(status)) {
+    if (status && !validStatuses.includes(status)) {
       return res.status(400).json({ message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
     }
 
@@ -149,19 +193,27 @@ exports.updateAppointmentStatus = async (req, res) => {
       return res.status(404).json({ message: 'Appointment not found' });
     }
 
+    // Verify ownership
+    const isDoctor = appointment.doctor.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'admin';
+    
+    if (!isDoctor && !isAdmin) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
     // Prevent invalid transitions
-    if (appointment.status === 'completed' && status !== 'completed') {
+    if (status && appointment.status === 'completed' && status !== 'completed') {
       return res.status(400).json({ message: 'Cannot change status of a completed appointment' });
     }
 
-    if (appointment.status === 'cancelled' && status !== 'cancelled') {
+    if (status && appointment.status === 'cancelled' && status !== 'cancelled') {
       return res.status(400).json({ message: 'Cannot change status of a cancelled appointment' });
     }
 
-    appointment.status = status;
-    if (notes) {
-      appointment.notes = notes;
-    }
+    if (status) appointment.status = status;
+    if (notes) appointment.notes = notes;
+    if (diagnosis) appointment.diagnosis = diagnosis;
+
     await appointment.save();
 
     const populated = await Appointment.findById(appointment._id)
@@ -171,7 +223,16 @@ exports.updateAppointmentStatus = async (req, res) => {
       })
       .populate('patient', 'name email');
 
-    res.json({ message: `Appointment ${status}`, appointment: populated });
+    // Notify patient about status change
+    await createNotification({
+      recipient: appointment.patient,
+      type: 'appointment',
+      title: 'Appointment Updated',
+      message: `Your appointment status has been updated.`,
+      data: { appointmentId: appointment._id }
+    });
+
+    res.json({ message: `Appointment updated successfully`, appointment: populated });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -180,7 +241,7 @@ exports.updateAppointmentStatus = async (req, res) => {
 // Reschedule appointment
 exports.rescheduleAppointment = async (req, res) => {
   try {
-    const { date, time } = req.body;
+    const { date, time, reason } = req.body;
 
     if (!date || !time) {
       return res.status(400).json({ message: 'New date and time are required' });
@@ -193,9 +254,11 @@ exports.rescheduleAppointment = async (req, res) => {
     }
 
     // Only patient who owns it, or doctor/admin, can reschedule
-    const isOwner = appointment.patient.toString() === req.user._id.toString();
-    const isDoctorOrAdmin = req.user.role === 'doctor' || req.user.role === 'admin';
-    if (!isOwner && !isDoctorOrAdmin) {
+    const isPatient = appointment.patient.toString() === req.user._id.toString();
+    const isDoctor = appointment.doctor.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'admin';
+    
+    if (!isPatient && !isDoctor && !isAdmin) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -218,6 +281,7 @@ exports.rescheduleAppointment = async (req, res) => {
 
     appointment.date = date;
     appointment.time = time;
+    if (reason) appointment.rescheduleReason = reason;
     appointment.status = 'rescheduled';
     await appointment.save();
 
@@ -228,7 +292,16 @@ exports.rescheduleAppointment = async (req, res) => {
       })
       .populate('patient', 'name email');
 
-    res.json({ message: 'Appointment rescheduled', appointment: populated });
+    const recipient = isPatient ? appointment.doctor : appointment.patient;
+    await createNotification({
+      recipient,
+      type: 'appointment',
+      title: 'Appointment Rescheduled',
+      message: `Appointment rescheduled to ${appointment.date} at ${appointment.time}.`,
+      data: { appointmentId: appointment._id }
+    });
+
+    res.json({ message: 'Appointment rescheduled successfully', appointment: populated });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

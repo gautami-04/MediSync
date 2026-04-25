@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
+import DashboardLayout from "./DashboardLayout";
 
 const ProtectedRoute = () => {
 	const { isAuthenticated } = useAuth();
@@ -8,7 +9,11 @@ const ProtectedRoute = () => {
 		return <Navigate to="/login" replace />;
 	}
 
-	return <Outlet />;
+	return (
+    <DashboardLayout>
+      <Outlet />
+    </DashboardLayout>
+  );
 };
 
 export default ProtectedRoute;

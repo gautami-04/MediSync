@@ -1,8 +1,34 @@
 const Doctor = require('../models/doctor.model');
+const Appointment = require('../models/appointment.model');
+const Payment = require('../models/payment.model');
+const PendingUser = require('../models/pendingUser.model');
+const mongoose = require('mongoose');
 
 const getAllDoctors = async (req, res) => {
 	try {
-		const doctors = await Doctor.find().populate('user', 'name email role');
+		const { specialization, hospital, minFee, maxFee, search } = req.query;
+		let query = { isApproved: true };
+
+		if (specialization) {
+			query.specialization = { $regex: specialization, $options: 'i' };
+		}
+		if (hospital) {
+			query.hospital = { $regex: hospital, $options: 'i' };
+		}
+		if (minFee || maxFee) {
+			query.consultationFee = {};
+			if (minFee) query.consultationFee.$gte = Number(minFee);
+			if (maxFee) query.consultationFee.$lte = Number(maxFee);
+		}
+		if (search) {
+			query.$or = [
+				{ specialization: { $regex: search, $options: 'i' } },
+				{ hospital: { $regex: search, $options: 'i' } },
+				{ bio: { $regex: search, $options: 'i' } },
+			];
+		}
+
+		const doctors = await Doctor.find(query).populate('user', 'name email role');
 		res.json(doctors);
 	} catch (error) {
 		res.status(500).json({ message: error.message });
@@ -13,8 +39,8 @@ const getDoctorById = async (req, res) => {
 	try {
 		const doctor = await Doctor.findById(req.params.id).populate('user', 'name email role');
 
-		if (!doctor) {
-			return res.status(404).json({ message: 'Doctor not found' });
+		if (!doctor || !doctor.isApproved) {
+			return res.status(404).json({ message: 'Doctor not found or not approved' });
 		}
 
 		res.json(doctor);
@@ -103,10 +129,50 @@ const deleteDoctorProfile = async (req, res) => {
 	}
 };
 
+const getDoctorStats = async (req, res) => {
+	try {
+		const doctorId = req.user._id;
+
+		const today = new Date().toISOString().split('T')[0];
+
+		const todaysAppointments = await Appointment.countDocuments({ doctor: doctorId, date: today });
+
+		const patients = await Appointment.distinct('patient', { doctor: doctorId });
+		const totalPatients = patients.length;
+
+		const earningsAgg = await Appointment.aggregate([
+			{ $match: { doctor: new mongoose.Types.ObjectId(doctorId), status: { $ne: 'cancelled' } } },
+			{
+				$lookup: {
+					from: 'payments',
+					localField: '_id',
+					foreignField: 'appointment',
+					as: 'payments',
+				},
+			},
+			{ $unwind: '$payments' },
+			{ $match: { 'payments.status': 'paid' } },
+			{ $group: { _id: null, total: { $sum: '$payments.amount' } } },
+		]);
+
+		const totalEarnings = (earningsAgg[0] && earningsAgg[0].total) || 0;
+
+		let pendingApprovals = 0;
+		if (req.user.role === 'admin') {
+			pendingApprovals = await PendingUser.countDocuments();
+		}
+
+		res.json({ todaysAppointments, totalPatients, totalEarnings, pendingApprovals });
+	} catch (error) {
+		res.status(500).json({ message: error.message });
+	}
+};
+
 module.exports = {
 	getAllDoctors,
 	getDoctorById,
 	getMyDoctorProfile,
 	upsertDoctorProfile,
 	deleteDoctorProfile,
+	getDoctorStats,
 };

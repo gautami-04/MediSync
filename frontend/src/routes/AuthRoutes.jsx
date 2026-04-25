@@ -10,6 +10,8 @@ import ForgotPassword from "../pages/auth/ForgotPassword";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import OtpVerification from "../pages/auth/OtpVerification";
+import DoctorSearch from "../pages/patient/DoctorSearch";
+import ManageUsers from "../pages/admin/ManageUsers";
 
 import BookAppointment from "../pages/patient/BookAppointment";
 import PatientDashboard from "../pages/patient/Dashboard";
@@ -21,7 +23,7 @@ import Favorites from "../pages/patient/Favorites";
 import AdminRegister from "../pages/admin/AdminRegister";
 import AdminLogin from "../pages/admin/AdminLogin";
 import AdminDashboard from "../pages/admin/Dashboard";
-import AdminAppointments from "../pages/admin/ManageUsers";
+import AdminAppointments from "../pages/admin/AdminAppointments";
 
 import RoleBasedDashboard from "../components/RoleBasedDashboard";
 import DoctorDashboard from "../pages/doctor/Dashboard";
@@ -69,6 +71,8 @@ const AuthRoutes = () => {
         <Route path="/medical-records" element={<MedicalRecords />} />
         <Route path="/appointment-history" element={<AppointmentHistory />} />
         <Route path="/find-doctors" element={<DoctorSearch />} />
+        <Route path="/doctors" element={<DoctorSearch />} />
+        <Route path="/admin/users" element={<ManageUsers />} />
         <Route path="/favorites" element={<Favorites />} />
         <Route path="/payments" element={<Payments />} />
         <Route path="/settings" element={<Settings />} />

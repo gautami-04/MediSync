@@ -26,6 +26,6 @@ export const getDoctorAppointments = async () => {
 };
 
 export const rescheduleAppointment = async (appointmentId, payload) => {
-	const response = await api.put(`/api/appointments/reschedule/${appointmentId}`, payload);
+	const response = await api.put(`/api/appointments/${appointmentId}/reschedule`, payload);
 	return response.data;
 };

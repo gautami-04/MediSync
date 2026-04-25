@@ -16,8 +16,22 @@ exports.bookAppointment = async (req, res) => {
       return res.status(400).json({ message: 'Slot already booked' });
     }
 
+    const patientId = req.user._id;
+
+    // Check if patient already has an appointment at this time
+    const patientConflict = await Appointment.findOne({
+      patient: patientId,
+      date,
+      time,
+      status: { $ne: 'cancelled' }
+    });
+
+    if (patientConflict) {
+      return res.status(400).json({ message: 'You already have an appointment at this time' });
+    }
+
     const appointment = await Appointment.create({
-      patient: req.user._id,
+      patient: patientId,
       doctor: doctorId,
       date,
       time,
@@ -57,6 +71,15 @@ exports.cancelAppointment = async (req, res) => {
 
     if (!appointment) {
       return res.status(404).json({ message: 'Not found' });
+    }
+
+    // Verify ownership (Patient or Doctor)
+    const isPatient = appointment.patient.toString() === req.user._id.toString();
+    const isDoctor = appointment.doctor.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isPatient && !isDoctor && !isAdmin) {
+      return res.status(403).json({ message: 'Access denied' });
     }
 
     appointment.status = 'cancelled';

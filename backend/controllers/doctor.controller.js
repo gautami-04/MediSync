@@ -39,8 +39,8 @@ const getDoctorById = async (req, res) => {
 	try {
 		const doctor = await Doctor.findById(req.params.id).populate('user', 'name email role');
 
-		if (!doctor) {
-			return res.status(404).json({ message: 'Doctor not found' });
+		if (!doctor || !doctor.isApproved) {
+			return res.status(404).json({ message: 'Doctor not found or not approved' });
 		}
 
 		res.json(doctor);
@@ -140,24 +140,27 @@ const getDoctorStats = async (req, res) => {
 		const patients = await Appointment.distinct('patient', { doctor: doctorId });
 		const totalPatients = patients.length;
 
-		const earningsAgg = await Payment.aggregate([
-			{ $match: { status: 'paid' } },
+		const earningsAgg = await Appointment.aggregate([
+			{ $match: { doctor: new mongoose.Types.ObjectId(doctorId), status: { $ne: 'cancelled' } } },
 			{
 				$lookup: {
-					from: 'appointments',
-					localField: 'appointment',
-					foreignField: '_id',
-					as: 'appt',
+					from: 'payments',
+					localField: '_id',
+					foreignField: 'appointment',
+					as: 'payments',
 				},
 			},
-			{ $unwind: '$appt' },
-			{ $match: { 'appt.doctor': new mongoose.Types.ObjectId(doctorId) } },
-			{ $group: { _id: null, total: { $sum: '$amount' } } },
+			{ $unwind: '$payments' },
+			{ $match: { 'payments.status': 'paid' } },
+			{ $group: { _id: null, total: { $sum: '$payments.amount' } } },
 		]);
 
 		const totalEarnings = (earningsAgg[0] && earningsAgg[0].total) || 0;
 
-		const pendingApprovals = await PendingUser.countDocuments();
+		let pendingApprovals = 0;
+		if (req.user.role === 'admin') {
+			pendingApprovals = await PendingUser.countDocuments();
+		}
 
 		res.json({ todaysAppointments, totalPatients, totalEarnings, pendingApprovals });
 	} catch (error) {

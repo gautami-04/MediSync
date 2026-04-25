@@ -6,8 +6,16 @@ const Payment = require('../models/payment.model');
 // Get all users
 exports.getAllUsers = async (req, res) => {
 	try {
-		const users = await User.find().select('-password').sort({ createdAt: -1 });
-		res.json(users);
+		const page = parseInt(req.query.page) || 1;
+		const limit = parseInt(req.query.limit) || 10;
+		const skip = (page - 1) * limit;
+
+		const [users, total] = await Promise.all([
+			User.find().select('-password').sort({ createdAt: -1 }).skip(skip).limit(limit),
+			User.countDocuments()
+		]);
+
+		res.json({ total, page, limit, data: users });
 	} catch (error) {
 		res.status(500).json({ message: error.message });
 	}
@@ -16,10 +24,16 @@ exports.getAllUsers = async (req, res) => {
 // Get all doctors with approval status
 exports.getAllDoctors = async (req, res) => {
 	try {
-		const doctors = await Doctor.find()
-			.populate('user', 'name email')
-			.sort({ createdAt: -1 });
-		res.json(doctors);
+		const page = parseInt(req.query.page) || 1;
+		const limit = parseInt(req.query.limit) || 10;
+		const skip = (page - 1) * limit;
+
+		const [doctors, total] = await Promise.all([
+			Doctor.find().populate('user', 'name email').sort({ createdAt: -1 }).skip(skip).limit(limit),
+			Doctor.countDocuments()
+		]);
+
+		res.json({ total, page, limit, data: doctors });
 	} catch (error) {
 		res.status(500).json({ message: error.message });
 	}
@@ -64,11 +78,21 @@ exports.rejectDoctor = async (req, res) => {
 // Get all appointments
 exports.getAllAppointments = async (req, res) => {
 	try {
-		const appointments = await Appointment.find()
-			.populate('patient', 'name email')
-			.populate('doctor', 'name email')
-			.sort({ createdAt: -1 });
-		res.json(appointments);
+		const page = parseInt(req.query.page) || 1;
+		const limit = parseInt(req.query.limit) || 10;
+		const skip = (page - 1) * limit;
+
+		const [appointments, total] = await Promise.all([
+			Appointment.find()
+				.populate('patient', 'name email')
+				.populate('doctor', 'name email')
+				.sort({ createdAt: -1 })
+				.skip(skip)
+				.limit(limit),
+			Appointment.countDocuments()
+		]);
+
+		res.json({ total, page, limit, data: appointments });
 	} catch (error) {
 		res.status(500).json({ message: error.message });
 	}

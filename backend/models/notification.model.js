@@ -20,14 +20,15 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['appointment', 'prescription', 'payment', 'system'],
+    enum: ['info', 'alert', 'appointment', 'prescription', 'payment', 'system'],
     default: 'system'
   },
   isRead: {
     type: Boolean,
     default: false
   },
-  link: String // Optional link to redirect user (e.g. /dashboard)
+  link: String,
+  data: { type: Object }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Notification', notificationSchema);

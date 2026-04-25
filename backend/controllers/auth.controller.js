@@ -18,6 +18,7 @@ const issueOtpForRecord = async (record) => {
   const otp = generateOtp();
   record.otp = otp;
   record.otpExpiresAt = new Date(Date.now() + OTP_VALIDITY_MS);
+  record.otpAttempts = 0;
   await record.save();
   return sendOtpEmail(record.email, otp);
 };
@@ -179,7 +180,13 @@ exports.verifyOtp = async (req, res) => {
           return res.status(400).json({ message: 'OTP has expired. Please request a new OTP.' });
         }
 
+        if (pendingUser.otpAttempts >= 5) {
+          return res.status(429).json({ message: 'Too many failed attempts. Please request a new OTP.' });
+        }
+
         if (pendingUser.otp !== otp) {
+          pendingUser.otpAttempts += 1;
+          await pendingUser.save();
           return res.status(400).json({ message: 'Incorrect OTP' });
         }
 
@@ -225,7 +232,13 @@ exports.verifyOtp = async (req, res) => {
         return res.status(400).json({ message: 'OTP has expired. Please request a new OTP.' });
       }
 
+      if (existingUnverifiedUser.otpAttempts >= 5) {
+        return res.status(429).json({ message: 'Too many failed attempts. Please request a new OTP.' });
+      }
+
       if (existingUnverifiedUser.otp !== otp) {
+        existingUnverifiedUser.otpAttempts += 1;
+        await existingUnverifiedUser.save();
         return res.status(400).json({ message: 'Incorrect OTP' });
       }
 
@@ -259,7 +272,13 @@ exports.verifyOtp = async (req, res) => {
         return res.status(400).json({ message: 'OTP has expired. Please request a new OTP.' });
       }
 
+      if (user.otpAttempts >= 5) {
+        return res.status(429).json({ message: 'Too many failed attempts. Please request a new OTP.' });
+      }
+
       if (user.otp !== otp) {
+        user.otpAttempts += 1;
+        await user.save();
         return res.status(400).json({ message: 'Incorrect OTP' });
       }
 

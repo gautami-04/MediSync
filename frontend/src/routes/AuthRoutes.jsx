@@ -18,6 +18,9 @@ import Favorites from "../pages/patient/Favorites";
 import AdminRegister from "../pages/admin/AdminRegister";
 import AdminLogin from "../pages/admin/AdminLogin";
 import RoleBasedDashboard from "../components/RoleBasedDashboard";
+import Dashboard from "../pages/doctor/Dashboard";
+import DoctorProfile from "../pages/doctor/DoctorProfile";
+import DoctorAppointments from "../pages/doctor/DoctorAppointments";
 
 const AuthRoutes = () => {
 	const { isAuthenticated } = useAuth();
@@ -42,6 +45,9 @@ const AuthRoutes = () => {
         <Route path="/payments" element={<Payments />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/book-appointment" element={<BookAppointment />} />
+        <Route path="/doctor/dashboard" element={<Dashboard />} />
+        <Route path="/doctor/profile" element={<DoctorProfile />} />
+        <Route path="/doctor/appointments" element={<DoctorAppointments />} />
       </Route>
 
 			<Route

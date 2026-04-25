@@ -12,10 +12,10 @@ const {
   updateAppointmentStatus,
 } = require('../controllers/appointment.controller');
 
-router.post('/book', protect, bookAppointment);
+router.post('/book', protect, authorize('patient'), bookAppointment);
 router.get('/my', protect, getMyAppointments);
 router.put('/cancel/:id', protect, cancelAppointment);
-router.get('/doctor', protect, getDoctorAppointments);
+router.get('/doctor', protect, authorize('doctor'), getDoctorAppointments);
 router.put('/:id/reschedule', protect, rescheduleAppointment);
 router.put('/:id/status', protect, authorize('doctor'), updateAppointmentStatus);
 

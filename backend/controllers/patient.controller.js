@@ -3,6 +3,7 @@ const Patient = require('../models/patient.model');
 const Appointment = require('../models/appointment.model');
 const MedicalRecord = require('../models/medicalRecord.model');
 const User = require('../models/user.model');
+const Payment = require('../models/payment.model');
 
 const getAppointmentDoctorPopulate = () => {
 	const doctorPath = Appointment.schema.path('doctor');
@@ -76,6 +77,55 @@ const getOrCreatePatient = async (userId) => {
 	return patient;
 };
 
+const Doctor = require('../models/doctor.model');
+
+const getSavedDoctors = async (req, res) => {
+	try {
+		const user = await User.findById(req.user._id).populate({ path: 'savedDoctors', populate: { path: 'user', select: 'name email' } }).lean();
+		return res.status(200).json(user?.savedDoctors || []);
+	} catch (error) {
+		return res.status(500).json({ message: error.message });
+	}
+};
+
+const addSavedDoctor = async (req, res) => {
+	try {
+		const doctorId = req.params.doctorId;
+		if (!doctorId) return res.status(400).json({ message: 'Doctor id required' });
+
+		const doctor = await Doctor.findById(doctorId).lean();
+		if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
+
+		const user = await User.findById(req.user._id);
+		if (!user.savedDoctors) user.savedDoctors = [];
+		if (!user.savedDoctors.find((d) => d.toString() === doctorId.toString())) {
+			user.savedDoctors.push(doctorId);
+			await user.save();
+		}
+
+		return res.status(200).json({ message: 'Doctor saved', savedDoctorsCount: user.savedDoctors.length });
+	} catch (error) {
+		return res.status(500).json({ message: error.message });
+	}
+};
+
+const removeSavedDoctor = async (req, res) => {
+	try {
+		const doctorId = req.params.doctorId;
+		if (!doctorId) return res.status(400).json({ message: 'Doctor id required' });
+
+		const user = await User.findById(req.user._id);
+		if (!user || !user.savedDoctors) return res.status(200).json({ message: 'No saved doctors', savedDoctorsCount: 0 });
+
+		user.savedDoctors = user.savedDoctors.filter((d) => d.toString() !== doctorId.toString());
+		await user.save();
+
+		return res.status(200).json({ message: 'Doctor removed', savedDoctorsCount: user.savedDoctors.length });
+	} catch (error) {
+		return res.status(500).json({ message: error.message });
+	}
+};
+
 const getMyPatientProfile = async (req, res) => {
 	try {
 		const patient = await getOrCreatePatient(req.user._id);
@@ -125,7 +175,7 @@ const getPatientDashboard = async (req, res) => {
 		const now = new Date();
 		const patientRefs = [req.user._id, patient._id];
 
-		const [appointments, recentRecords, user] = await Promise.all([
+		const [appointments, recentRecords, user, recentPayments, paymentsAgg] = await Promise.all([
 			Appointment.find({ patient: { $in: patientRefs } })
 				.populate(getAppointmentDoctorPopulate())
 				.lean(),
@@ -135,6 +185,14 @@ const getPatientDashboard = async (req, res) => {
 				.populate(getMedicalRecordDoctorPopulate())
 				.lean(),
 			User.findById(req.user._id).lean(),
+			Payment.find({ $or: [{ patient: { $in: patientRefs } }, { user: { $in: patientRefs } }] })
+				.sort({ createdAt: -1 })
+				.limit(5)
+				.lean(),
+			Payment.aggregate([
+				{ $match: { $or: [{ patient: { $in: patientRefs } }, { user: { $in: patientRefs } }], status: 'paid' } },
+				{ $group: { _id: null, total: { $sum: '$amount' } } },
+			]),
 		]);
 
 		const totalAppointments = appointments.length;
@@ -153,8 +211,10 @@ const getPatientDashboard = async (req, res) => {
 			.sort((a, b) => getAppointmentDate(b) - getAppointmentDate(a))
 			.slice(0, 5);
 
-		const unreadNotifications =
-			user?.notifications?.filter((item) => !item.isRead).length || 0;
+		const unreadNotifications = user?.notifications?.filter((item) => !item.isRead).length || 0;
+
+		const totalSpent = (paymentsAgg && paymentsAgg[0] && paymentsAgg[0].total) ? paymentsAgg[0].total : 0;
+		const savedDoctorsCount = (user?.savedDoctors && Array.isArray(user.savedDoctors)) ? user.savedDoctors.length : 0;
 
 		return res.status(200).json({
 			summary: {
@@ -163,9 +223,12 @@ const getPatientDashboard = async (req, res) => {
 				completedAppointments,
 				medicalRecords: recentRecords.length,
 				unreadNotifications,
+				totalSpent,
+				savedDoctorsCount,
 			},
 			recentAppointments,
 			recentRecords,
+			recentPayments,
 		});
 	} catch (error) {
 		return res.status(500).json({ message: error.message });
@@ -173,6 +236,9 @@ const getPatientDashboard = async (req, res) => {
 };
 
 module.exports = {
+	getSavedDoctors,
+	addSavedDoctor,
+	removeSavedDoctor,
 	getMyPatientProfile,
 	upsertPatientProfile,
 	getPatientDashboard,

@@ -3,6 +3,7 @@ const Appointment = require('../models/appointment.model');
 const Doctor = require('../models/doctor.model');
 const Patient = require('../models/patient.model');
 const validators = require('../utils/validators');
+const { createNotification } = require('../services/notification.service');
 
 const defaultSanitizePagination = (query = {}, defaults = { page: 1, limit: 10 }) => {
 	const fallbackPage = Number(defaults.page) > 0 ? Number(defaults.page) : 1;
@@ -27,16 +28,6 @@ const sanitizePagination =
 	typeof validators?.sanitizePagination === 'function'
 		? validators.sanitizePagination
 		: defaultSanitizePagination;
-
-let notifyUser = async () => {};
-try {
-	const notifications = require('../utils/notifications');
-	if (typeof notifications?.notifyUser === 'function') {
-		notifyUser = notifications.notifyUser;
-	}
-} catch (error) {
-	notifyUser = async () => {};
-}
 
 const normalizeId = (value) => {
 	if (!value) return null;
@@ -185,10 +176,12 @@ const createMedicalRecord = async (req, res) => {
 			attachments: Array.isArray(attachments) ? attachments : [],
 		});
 
-		await notifyUser(patientUserId, {
+		await createNotification({
+			recipient: patientUserId,
 			title: 'New Medical Record',
 			message: `A new medical record has been added for your appointment on ${getAppointmentDisplayDate(appointment)}`,
-			type: 'success',
+			type: 'appointment',
+			data: { recordId: record._id, appointmentId: appointment._id }
 		});
 
 		const populated = await MedicalRecord.findById(record._id)
@@ -309,10 +302,12 @@ const updateMedicalRecord = async (req, res) => {
 
 		await record.save();
 
-		await notifyUser(record.patient?.user?._id, {
+		await createNotification({
+			recipient: record.patient?.user?._id,
 			title: 'Medical Record Updated',
 			message: 'One of your medical records has been updated by the doctor.',
-			type: 'info',
+			type: 'appointment',
+			data: { recordId: record._id }
 		});
 
 		return res.status(200).json({ message: 'Medical record updated', record });

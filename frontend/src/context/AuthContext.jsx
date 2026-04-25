@@ -47,6 +47,28 @@ const readStoredUser = () => {
 	}
 };
 
+const extractSessionFromAuthPayload = (data, fallbackUser = {}) => {
+	const nextToken =
+		data?.token || data?.accessToken || data?.data?.token || data?.data?.accessToken;
+
+	const nextUser =
+		data?.user ||
+		data?.data?.user ||
+		(data?._id || data?.email
+			? {
+				_id: data?._id,
+				name: data?.name,
+				email: data?.email,
+				role: data?.role || fallbackUser?.role || "patient",
+			}
+			: {
+				email: fallbackUser?.email || "",
+				role: fallbackUser?.role || "patient",
+			});
+
+	return { nextToken, nextUser };
+};
+
 export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
@@ -74,19 +96,10 @@ export const AuthProvider = ({ children }) => {
 			setAuthLoading(true);
 			try {
 				const data = await loginUser(credentials);
-				const nextToken =
-					data?.token || data?.accessToken || data?.data?.token || data?.data?.accessToken;
-				const nextUser =
-					data?.user ||
-					data?.data?.user ||
-					(data?._id || data?.email
-						? {
-							_id: data?._id,
-							name: data?.name,
-							email: data?.email,
-							role: data?.role || "patient",
-						}
-						: { email: credentials.email, role: "patient" });
+				const { nextToken, nextUser } = extractSessionFromAuthPayload(data, {
+					email: credentials.email,
+					role: "patient",
+				});
 
 				if (!nextToken) {
 					throw new Error("Login succeeded but token was not returned.");
@@ -108,6 +121,20 @@ export const AuthProvider = ({ children }) => {
 		[persistSession]
 	);
 
+	const completeAuthSession = useCallback(
+		(authPayload, fallbackUser = {}) => {
+			const { nextToken, nextUser } = extractSessionFromAuthPayload(authPayload, fallbackUser);
+
+			if (!nextToken) {
+				throw new Error("Authentication succeeded but token was not returned.");
+			}
+
+			persistSession(nextToken, nextUser);
+			return nextUser;
+		},
+		[persistSession]
+	);
+
 	const logout = useCallback(() => {
 		clearSession();
 	}, [clearSession]);
@@ -119,9 +146,10 @@ export const AuthProvider = ({ children }) => {
 			isAuthenticated: Boolean(token),
 			authLoading,
 			login,
+			completeAuthSession,
 			logout,
 		}),
-		[token, user, authLoading, login, logout]
+		[token, user, authLoading, login, completeAuthSession, logout]
 	);
 
 	return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;

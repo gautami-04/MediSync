@@ -19,7 +19,7 @@ const normalizeApiPath = (baseURL = "", url = "") => {
 
 const api = axios.create({
 	baseURL: (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, ""),
-	timeout: 15000,
+	timeout: 30000,
 	headers: {
 		"Content-Type": "application/json",
 	},
@@ -36,5 +36,19 @@ api.interceptors.request.use((config) => {
 
 	return config;
 });
+
+api.interceptors.response.use(
+	(response) => response,
+	(error) => {
+		if (error.response?.status === 401) {
+			localStorage.removeItem("medisync_token");
+			localStorage.removeItem("medisync_user");
+			if (!window.location.pathname.includes("/login")) {
+				window.location.href = "/login";
+			}
+		}
+		return Promise.reject(error);
+	}
+);
 
 export default api;

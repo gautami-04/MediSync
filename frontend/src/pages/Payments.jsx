@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getMyPayments } from "../services/payment.service";
 
 const formatCurrency = (value) => {
-	return `$${Number(value || 0).toFixed(2)}`;
+	return `₹${Number(value || 0).toFixed(2)}`;
 };
 
 const formatDate = (value) => {
@@ -197,9 +197,13 @@ const Payments = () => {
 									</span>
 								</td>
 								<td>
-									<Link to="#" className={styles.actionLink}>
+									<button 
+										className={styles.actionLink} 
+										style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }}
+										onClick={() => alert(`Payment Details:\nID: ${payment._id}\nDoctor: ${payment.doctorName || 'General Consultation'}\nAmount: ₹${Number(payment.amount).toFixed(2)}\nStatus: ${String(payment.status).toUpperCase()}`)}
+									>
 										View Details
-									</Link>
+									</button>
 								</td>
 							</tr>
 						))}

@@ -21,12 +21,13 @@ const prescriptionSchema = new mongoose.Schema(
 			{
 				name: { type: String, required: true },
 				dosage: { type: String, required: true },
-				frequency: { type: String, required: true },
+				frequency: { type: String },
 				duration: { type: String, required: true },
 				instructions: { type: String },
 			},
 		],
 		advice: { type: String },
+		notes: { type: String },
 		date: { type: Date, default: Date.now },
 	},
 	{ timestamps: true }

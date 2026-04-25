@@ -6,10 +6,12 @@ const {
 	createPrescription,
 	getMyPrescriptions,
 	getDoctorPrescriptions,
+	getPrescriptionById,
 } = require('../controllers/prescription.controller');
 
 router.post('/', protect, authorizeRoles('doctor'), createPrescription);
 router.get('/my', protect, authorizeRoles('patient'), getMyPrescriptions);
 router.get('/doctor', protect, authorizeRoles('doctor'), getDoctorPrescriptions);
+router.get('/:id', protect, getPrescriptionById);
 
 module.exports = router;

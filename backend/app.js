@@ -10,6 +10,9 @@ const paymentRoutes = require('./routes/payment.routes');
 const medicalRecordRoutes = require('./routes/medicalRecord.routes');
 const patientRoutes = require('./routes/patient.routes');
 const adminRoutes = require('./routes/admin.routes');
+const notificationRoutes = require('./routes/notification.routes');
+const prescriptionRoutes = require('./routes/prescription.routes');
+const { notFound, errorHandler } = require('./middleware/error.middleware');
 
 app.use(cors());
 app.use(express.json());
@@ -27,5 +30,10 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/medical-records', medicalRecordRoutes);
 app.use('/api/patients', patientRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/prescriptions', prescriptionRoutes);
+
+app.use(notFound);
+app.use(errorHandler);
 
 module.exports = app;

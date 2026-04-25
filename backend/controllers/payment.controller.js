@@ -12,7 +12,6 @@ exports.createPayment = async (req, res) => {
 		const {
 			amount,
 			method = 'card',
-			status = 'pending',
 			appointmentId,
 			doctorName,
 			specialty,
@@ -27,10 +26,10 @@ exports.createPayment = async (req, res) => {
 			patient: req.user._id,
 			amount: Number(amount),
 			method,
-			status,
+			status: 'pending',
 			notes: notes || '',
 			referenceId: generateReferenceId(),
-			paidAt: status === 'paid' ? new Date() : null,
+			paidAt: null,
 		};
 
 		if (appointmentId) {

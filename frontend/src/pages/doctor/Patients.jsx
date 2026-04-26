@@ -68,7 +68,6 @@ const Patients = () => {
                   <th>Clinical ID</th>
                   <th>Gender</th>
                   <th>Blood Group</th>
-                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -92,14 +91,11 @@ const Patients = () => {
                     <td className={styles.id}>#{p._id.slice(-6).toUpperCase()}</td>
                     <td>{p.gender || 'Not specified'}</td>
                     <td><span className={styles.blood}>{p.bloodGroup || 'N/A'}</span></td>
-                    <td>
-                      <button className={styles.viewBtn} onClick={() => addToast(`Feature coming soon: View history for ${p.user?.name}`, 'info')}>View History</button>
-                    </td>
                   </tr>
                 ))}
                 {patients.length === 0 && (
                   <tr>
-                    <td colSpan="5" className={styles.empty}>No patients found matching your search.</td>
+                    <td colSpan="4" className={styles.empty}>No patients found matching your search.</td>
                   </tr>
                 )}
               </tbody>

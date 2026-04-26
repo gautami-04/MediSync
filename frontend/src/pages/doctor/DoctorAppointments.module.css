@@ -1,33 +1,36 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 32px;
 }
 
 .header {
-  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .headerSubtitle {
   color: var(--brand-primary);
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-size: 0.8rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 4px;
+  letter-spacing: 1.5px;
 }
 
 .headerTitle {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: var(--text-primary);
+  font-size: 2.25rem;
+  font-weight: 900;
+  color: var(--text-main);
+  letter-spacing: -1px;
 }
 
 .headerRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 20px;
+  flex-wrap: wrap;
+  gap: 24px;
 }
 
 .searchBox {
@@ -35,10 +38,17 @@
   align-items: center;
   background: white;
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: 4px 4px 4px 16px;
+  border-radius: 16px;
+  padding: 6px 6px 6px 20px;
   width: 100%;
   max-width: 400px;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-all);
+}
+
+.searchBox:focus-within {
+  border-color: var(--brand-primary);
+  box-shadow: var(--shadow-md);
 }
 
 .searchInput {
@@ -46,320 +56,87 @@
   background: none;
   padding: 8px 0;
   width: 100%;
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: var(--text-main);
   outline: none;
 }
 
 .searchBtn {
-  background: var(--primary);
+  background: var(--brand-primary);
   color: white;
   border: none;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-md);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.searchBtn:hover {
-  transform: scale(1.05);
+  transition: var(--transition-fast);
 }
 
 .tabBar {
   display: flex;
   gap: 32px;
-  margin-bottom: 32px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 2px solid var(--border-color);
 }
 
 .tabItem {
   background: none;
   border: none;
-  padding: 12px 0;
+  padding: 16px 8px;
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-muted);
   cursor: pointer;
   position: relative;
+  transition: var(--transition-fast);
 }
 
 .tabActive {
-  color: var(--primary);
+  color: var(--brand-primary);
 }
 
 .tabActive::after {
   content: '';
   position: absolute;
-  bottom: -1px;
+  bottom: -2px;
   left: 0;
   right: 0;
   height: 3px;
-  background: var(--primary);
-  border-radius: 3px 3px 0 0;
-}
-
-.weekNav {
-  display: flex;
-  gap: 12px;
-}
-
-.navBtn {
-  padding: 10px 16px;
-  border-radius: 99px;
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
-  border: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.navBtnPrev {
-  background: #e2f1e9;
-  color: var(--brand-primary);
-}
-
-.navBtnNext {
   background: var(--brand-primary);
-  color: white;
-}
-
-.mainGrid {
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 24px;
+  border-radius: 3px 3px 0 0;
 }
 
 .calendarCard {
   background: white;
-  border-radius: 24px;
-  padding: 32px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
-  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
 }
 
-.gridHeader {
-  display: grid;
-  grid-template-columns: 80px repeat(6, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.dayCol {
-  text-align: center;
-}
-
-.dayName {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #9ab4a8;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-
-.dayNumber {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.gridRow {
-  display: grid;
-  grid-template-columns: 80px repeat(6, 1fr);
-  gap: 12px;
-  margin-bottom: 16px;
-  align-items: center;
-}
-
-.timeLabel {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-align: right;
-  padding-right: 16px;
-}
-
-.slot {
-  height: 50px;
-  border-radius: 25px;
+.appointmentItem {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  font-size: 0.7rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: 1px solid transparent;
-  padding: 4px;
-  text-align: center;
-  line-height: 1.2;
-}
-
-.slotAvailable {
-  background: transparent;
-  border-color: #dcf1e7;
-  color: var(--brand-primary);
-}
-
-.slotAvailable:hover {
-  background: #f6fff9;
-}
-
-.slotBooked {
-  background: var(--brand-primary);
-  color: white;
-  box-shadow: 0 4px 12px rgba(33, 103, 78, 0.2);
-}
-
-.slotUnavailable {
-  background: #f1f5f9;
-  color: #9ab4a8;
-}
-
-.sidePanel {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.statusCard {
-  background: var(--text-primary);
-  border-radius: 20px;
   padding: 24px;
-  color: white;
-  position: relative;
-  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: var(--transition-all);
 }
 
-.statusLabel {
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: rgba(255,255,255,0.7);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.statusDot {
-  width: 6px;
-  height: 6px;
-  background: #4ade80;
-  border-radius: 50%;
-}
-
-.statusValue {
-  font-size: 2.5rem;
-  font-weight: 800;
-  margin-top: 12px;
-}
-
-.statusSub {
-  font-size: 0.85rem;
-  color: rgba(255,255,255,0.7);
-  margin-top: 4px;
-}
-
-.progressBar {
-  height: 4px;
-  background: rgba(255,255,255,0.2);
-  border-radius: 2px;
-  margin-top: 20px;
-  overflow: hidden;
-}
-
-.progressFill {
-  height: 100%;
-  background: #4ade80;
-  width: 72%;
-}
-
-.settingsCard {
-  background: #e9f6f0;
-  border-radius: 20px;
-  padding: 24px;
-}
-
-.settingsTitle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin-bottom: 24px;
-  color: var(--text-primary);
-}
-
-.settingGroup {
-  margin-bottom: 20px;
-}
-
-.settingLabel {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 12px;
-}
-
-.durationTabs {
-  display: flex;
-  gap: 8px;
-}
-
-.durationTab {
-  padding: 8px 16px;
-  border-radius: 99px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  background: white;
-  color: var(--text-secondary);
-  border: none;
-  cursor: pointer;
-}
-
-.durationTabActive {
-  background: var(--brand-primary);
-  color: white;
-}
-
-.settingInput {
-  width: 100%;
-  padding: 12px 16px;
-  border-radius: 99px;
-  border: none;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  outline: none;
-}
-
-.saveConfigBtn {
-  width: 100%;
-  padding: 16px;
-  border-radius: 99px;
-  background: var(--brand-primary);
-  color: white;
-  border: none;
-  font-weight: 700;
-  font-size: 0.9rem;
-  cursor: pointer;
-  margin-top: 8px;
-  box-shadow: 0 4px 12px rgba(33, 103, 78, 0.2);
+.appointmentItem:hover {
+  border-color: var(--brand-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .rescheduleModal {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.5);
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -368,40 +145,52 @@
 
 .modalContent {
   background: white;
-  padding: 32px;
-  border-radius: 24px;
-  width: 400px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  padding: 40px;
+  border-radius: 28px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: var(--shadow-xl);
 }
 
 .modalTitle {
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 900;
   margin-bottom: 24px;
+  letter-spacing: -0.5px;
 }
 
 .modalInput {
   width: 100%;
-  padding: 12px 16px;
-  border: 1px solid #dcf1e7;
-  border-radius: 12px;
-  margin-bottom: 16px;
+  padding: 14px 20px;
+  border: 2px solid var(--border-color);
+  border-radius: 14px;
+  margin-bottom: 20px;
   font-size: 1rem;
+  background: #f8fafc;
+  outline: none;
+  transition: var(--transition-fast);
+}
+
+.modalInput:focus {
+  border-color: var(--brand-primary);
+  background: white;
+  box-shadow: 0 0 0 4px var(--brand-light);
 }
 
 .modalActions {
   display: flex;
-  gap: 12px;
-  margin-top: 24px;
+  gap: 16px;
+  margin-top: 32px;
 }
 
 .modalBtn {
   flex: 1;
-  padding: 12px;
-  border-radius: 99px;
-  font-weight: 600;
+  padding: 14px;
+  border-radius: 14px;
+  font-weight: 800;
   cursor: pointer;
   border: none;
+  transition: var(--transition-all);
 }
 
 .modalBtnCancel {
@@ -412,4 +201,20 @@
 .modalBtnConfirm {
   background: var(--brand-primary);
   color: white;
+  box-shadow: 0 8px 16px rgba(48, 164, 108, 0.2);
+}
+
+.settingLabel {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 768px) {
+  .headerRow { flex-direction: column; align-items: flex-start; }
+  .searchBox { max-width: 100%; }
 }

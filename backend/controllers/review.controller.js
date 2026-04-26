@@ -15,21 +15,28 @@ exports.addReview = async (req, res) => {
 
     // Find the patient profile for the current user
     const Appointment = require('../models/appointment.model');
+    const Doctor = require('../models/doctor.model');
     const patientProfile = await Patient.findOne({ user: req.user._id });
     
     if (!patientProfile) {
       return res.status(403).json({ message: 'Patient profile not found. Complete your profile first.' });
     }
 
-    // Check if patient had a completed appointment with this doctor
+    // Resolve the Doctor profile ID from the User ID
+    const doctorProfile = await Doctor.findOne({ user: doctorId });
+    if (!doctorProfile) {
+      return res.status(404).json({ message: 'Doctor profile not found.' });
+    }
+
+    // Check if patient had an appointment with this doctor
     const appointment = await Appointment.findOne({
       patient: patientProfile._id,
-      doctor: doctorId,
-      status: 'completed'
+      doctor: doctorProfile._id,
+      status: { $in: ['completed', 'confirmed'] }
     });
 
     if (!appointment) {
-      return res.status(403).json({ message: 'You can only review doctors you have had a completed appointment with' });
+      return res.status(403).json({ message: 'You can only review doctors you have had a completed or confirmed appointment with' });
     }
 
     // prevent duplicate review

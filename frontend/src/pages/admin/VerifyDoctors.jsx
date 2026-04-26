@@ -7,6 +7,7 @@ import Button from "../../components/Button";
 const VerifyDoctors = () => {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const [alert, setAlert] = useState(null);
 
   useEffect(() => {
@@ -45,13 +46,39 @@ const VerifyDoctors = () => {
     }
   };
 
+  const filteredDoctors = React.useMemo(() => {
+    if (!searchTerm.trim()) return doctors;
+    const term = searchTerm.toLowerCase();
+    return doctors.filter(doc => 
+      (doc.user?.name || "").toLowerCase().includes(term) ||
+      (doc.user?.email || "").toLowerCase().includes(term) ||
+      (doc.specialization || "").toLowerCase().includes(term)
+    );
+  }, [doctors, searchTerm]);
+
   if (loading && doctors.length === 0) return <div>Accessing medical registry...</div>;
 
   return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-        <header>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 800 }}>Practitioner Verification</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Review and approve medical professionals for clinical practice on MediSync.</p>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1 style={{ fontSize: '1.8rem', fontWeight: 800 }}>Practitioner Verification</h1>
+            <p style={{ color: 'var(--text-muted)' }}>Review and approve medical professionals for clinical practice on MediSync.</p>
+          </div>
+          <input 
+            type="text" 
+            placeholder="Search practitioners..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              padding: '10px 16px',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-color)',
+              fontSize: '0.9rem',
+              width: '300px',
+              outline: 'none'
+            }}
+          />
         </header>
 
         {alert && (
@@ -79,7 +106,7 @@ const VerifyDoctors = () => {
                 </tr>
               </thead>
               <tbody>
-                {doctors.map(doc => (
+                {filteredDoctors.map(doc => (
                   <tr key={doc._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                     <td style={{ padding: '16px 24px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

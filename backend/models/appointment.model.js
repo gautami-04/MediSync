@@ -16,6 +16,11 @@ const appointmentSchema = new mongoose.Schema(
       enum: ['booked', 'confirmed', 'completed', 'cancelled', 'rescheduled'],
       default: 'booked',
     },
+    paymentMode: {
+      type: String,
+      enum: ['prepaid', 'pay_later'],
+      default: 'prepaid',
+    },
   },
   { timestamps: true }
 );

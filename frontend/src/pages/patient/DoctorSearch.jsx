@@ -87,19 +87,20 @@ const DoctorSearch = () => {
   return (
       <div className={styles.container}>
         <header className={styles.header}>
-          <h1 className={styles.title}>Find Your Specialist</h1>
-          <p className={styles.subtitle}>Book appointments with the best practitioners in the network.</p>
+          <h1 className={styles.headerTitle}>Find Your Specialist</h1>
+          <p className={styles.headerSubtitle}>Book appointments with the best practitioners in the network.</p>
         </header>
 
-        <section className={styles.searchSection} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', background: 'white', padding: '24px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginBottom: '32px' }}>
+        <section className={styles.searchSection}>
           <div className={styles.inputGroup}>
-            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Search by Name</label>
+            <label className={styles.label}>Search by Name</label>
             <div style={{ position: 'relative' }}>
-              <FiSearch style={{ position: 'absolute', left: '12px', top: '14px', color: 'var(--text-muted)' }} />
+              <FiSearch style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--text-muted)' }} />
               <input
                 type="text"
-                style={{ width: '100%', padding: '12px 12px 12px 40px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: '#f8fafc' }}
-                placeholder="e.g. Dr. Jovab"
+                className={styles.input}
+                style={{ paddingLeft: '48px', width: '100%' }}
+                placeholder="Dr. Rahul"
                 value={searchName}
                 onChange={(e) => setSearchName(e.target.value)}
               />
@@ -107,11 +108,11 @@ const DoctorSearch = () => {
           </div>
 
           <div className={styles.inputGroup}>
-            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Specialization</label>
+            <label className={styles.label}>Specialization</label>
             <input
               type="text"
-              style={{ width: '100%', padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: '#f8fafc' }}
-              placeholder="e.g. Cardiology"
+              className={styles.input}
+              placeholder="General Physician"
               value={specialization}
               onChange={(e) => setSpecialization(e.target.value)}
             />
@@ -119,11 +120,11 @@ const DoctorSearch = () => {
         </section>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '100px' }}>Accessing directory...</div>
+          <div className={styles.noResults}><h3>Accessing directory...</h3></div>
         ) : filteredDoctors.length > 0 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+          <div className={styles.resultsGrid}>
             {filteredDoctors.map((doc) => (
-              <div key={doc._id} style={{ background: 'white', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative' }}>
+              <div key={doc._id} className={styles.doctorCard}>
                 <button 
                   onClick={() => toggleFavorite(doc._id)}
                   style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', cursor: 'pointer', color: savedDoctorIds.has(doc._id) ? '#ef4444' : '#cbd5e1' }}
@@ -131,31 +132,31 @@ const DoctorSearch = () => {
                   <FiHeart size={24} style={{ fill: savedDoctorIds.has(doc._id) ? '#ef4444' : 'none' }} />
                 </button>
                 
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                  <div style={{ width: '56px', height: '56px', background: 'var(--primary-light)', color: 'var(--primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', fontWeight: 800 }}>
+                <div className={styles.doctorHeader}>
+                  <div className={styles.avatar}>
                     {(doc.user?.name || doc.name || 'D').charAt(0)}
                   </div>
-                  <div>
-                    <h3 style={{ margin: 0, fontWeight: 800 }}>{doc.user?.name || doc.name}</h3>
-                    <p style={{ margin: '2px 0 0', color: 'var(--primary)', fontWeight: 700, fontSize: '0.85rem' }}>{doc.specialization}</p>
+                  <div className={styles.doctorInfo}>
+                    <h3>{doc.user?.name || doc.name}</h3>
+                    <p>{doc.specialization}</p>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className={styles.doctorDetails}>
+                  <div className={styles.detailItem}>
                     <FiMapPin /> {doc.hospital || "Clinical Facility"}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div className={styles.detailItem}>
                     <FiDollarSign /> {doc.consultationFee ? `₹${doc.consultationFee}` : "Standard Consultation"}
                   </div>
                 </div>
 
-                <Button style={{ marginTop: '8px' }} onClick={() => handleBook(doc._id)}>Book Appointment</Button>
+                <Button className={styles.bookButton} onClick={() => handleBook(doc._id)}>Book Appointment</Button>
               </div>
             ))}
           </div>
         ) : (
-          <div style={{ textAlign: 'center', padding: '100px', background: 'white', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
+          <div className={styles.noResults}>
             <h3>No practitioners found matching your criteria.</h3>
           </div>
         )}

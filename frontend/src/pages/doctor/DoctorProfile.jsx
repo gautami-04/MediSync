@@ -20,7 +20,8 @@ const DoctorProfile = () => {
     qualification: '',
     hospital: '',
     bio: '',
-    profilePicture: ''
+    profilePicture: '',
+    consultationFee: ''
   });
 
   useEffect(() => {
@@ -38,7 +39,8 @@ const DoctorProfile = () => {
             qualification: data.qualification || prev.qualification,
             experienceYears: data.experienceYears || prev.experienceYears,
             hospital: data.hospital || prev.hospital,
-            profilePicture: data.user?.profilePicture || ''
+            profilePicture: data.user?.profilePicture || '',
+            consultationFee: data.consultationFee || ''
           }));
         }
       } catch (err) {
@@ -64,7 +66,8 @@ const DoctorProfile = () => {
         specialization: formData.specialization,
         qualification: formData.qualification,
         experienceYears: formData.experienceYears,
-        hospital: formData.hospital
+        hospital: formData.hospital,
+        consultationFee: formData.consultationFee
       });
       // Sync name in global auth state so navbar updates immediately
       if (formData.name) updateUser({ name: formData.name });
@@ -140,9 +143,15 @@ const DoctorProfile = () => {
             </div>
           </div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>SPECIALIZATION</label>
-            <input type="text" name="specialization" className={styles.formInput} placeholder="e.g. Cardiology" value={formData.specialization} onChange={handleChange} />
+          <div className={styles.formRow}>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>CONSULTATION FEE (₹)</label>
+              <input type="number" name="consultationFee" className={styles.formInput} value={formData.consultationFee} onChange={handleChange} />
+            </div>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>SPECIALIZATION</label>
+              <input type="text" name="specialization" className={styles.formInput} placeholder="e.g. Cardiology" value={formData.specialization} onChange={handleChange} />
+            </div>
           </div>
 
           <div className={styles.formGroup}>

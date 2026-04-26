@@ -5,8 +5,8 @@ const jwt = require('jsonwebtoken');
 const { generateOtp } = require('../utils/otp');
 const { sendOtpEmail } = require('../services/email.service');
 
-const OTP_VALIDITY_MS = 10 * 60 * 1000;
-const PASSWORD_RESET_OTP_VERIFIED_VALIDITY_MS = 10 * 60 * 1000;
+const OTP_VALIDITY_MS = 5 * 60 * 1000;
+const PASSWORD_RESET_OTP_VERIFIED_VALIDITY_MS = 5 * 60 * 1000;
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -59,9 +59,7 @@ exports.register = async (req, res) => {
     const delivery = await issueOtpForRecord(pendingUser);
 
     res.status(201).json({
-      message: delivery?.fallback
-        ? 'Registration started. OTP generated in server logs (email fallback mode).'
-        : 'Registration started. OTP sent to email.',
+      message: 'Registration started. Verification code sent to your email.',
       email: pendingUser.email,
     });
 
@@ -116,12 +114,10 @@ exports.sendOtp = async (req, res) => {
       const pendingUser = await PendingUser.findOne({ email });
 
       if (pendingUser) {
-        const delivery = await issueOtpForRecord(pendingUser);
+        await issueOtpForRecord(pendingUser);
 
         return res.json({
-          message: delivery?.fallback
-            ? 'OTP generated in server logs (email fallback mode).'
-            : 'OTP sent successfully to email.',
+          message: 'Verification code sent successfully to email.',
         });
       }
 
@@ -130,12 +126,10 @@ exports.sendOtp = async (req, res) => {
         return res.status(404).json({ message: 'No pending registration found for this email.' });
       }
 
-      const delivery = await issueOtpForRecord(existingUnverifiedUser);
+      await issueOtpForRecord(existingUnverifiedUser);
 
       return res.json({
-        message: delivery?.fallback
-          ? 'OTP generated in server logs (email fallback mode).'
-          : 'OTP sent successfully to email.',
+        message: 'Verification code sent successfully to email.',
       });
     }
 
@@ -146,12 +140,10 @@ exports.sendOtp = async (req, res) => {
         return res.status(404).json({ message: 'User not found' });
       }
 
-      const delivery = await issueOtpForRecord(user);
+      await issueOtpForRecord(user);
 
       return res.json({
-        message: delivery?.fallback
-          ? 'OTP generated in server logs (email fallback mode).'
-          : 'OTP sent successfully to email.',
+        message: 'Verification code sent successfully to email.',
       });
     }
 

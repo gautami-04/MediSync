@@ -355,6 +355,10 @@ const patientUploadRecord = async (req, res) => {
 			{ new: true, upsert: true, setDefaultsOnInsert: true }
 		);
 
+		if (!patient) {
+			return res.status(404).json({ message: 'Patient profile could not be initialized' });
+		}
+
 		const filePath = `/uploads/${req.file.filename}`;
 		
 		const record = await MedicalRecord.create({

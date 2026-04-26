@@ -11,6 +11,8 @@ const MedicalRecords = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadData, setUploadData] = useState({ title: '', notes: '', file: null });
+  const [prescriptions, setPrescriptions] = useState([]);
+  const [activeTab, setActiveTab] = useState('records'); // 'records' or 'prescriptions'
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -20,8 +22,12 @@ const MedicalRecords = () => {
   const fetchRecords = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/api/medicalRecords/my');
-      setRecords(res.data?.data || res.data || []);
+      const [recordsRes, presRes] = await Promise.all([
+        api.get('/api/medicalRecords/my'),
+        api.get('/api/prescriptions/my')
+      ]);
+      setRecords(recordsRes.data?.data || recordsRes.data || []);
+      setPrescriptions(presRes.data || []);
     } catch (err) {
       setError("Unable to retrieve medical history.");
     } finally {
@@ -54,78 +60,150 @@ const MedicalRecords = () => {
 
         {error && <div style={{ color: 'red', fontWeight: 600 }}>{error}</div>}
 
+        <div style={{ display: 'flex', gap: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
+          <button 
+            onClick={() => setActiveTab('records')}
+            style={{ background: activeTab === 'records' ? 'var(--primary)' : '#f1f5f9', color: activeTab === 'records' ? 'white' : 'var(--text-primary)', border: 'none', padding: '8px 16px', borderRadius: 'var(--radius-sm)', fontWeight: 700, cursor: 'pointer' }}
+          >
+            Medical Records
+          </button>
+          <button 
+            onClick={() => setActiveTab('prescriptions')}
+            style={{ background: activeTab === 'prescriptions' ? 'var(--primary)' : '#f1f5f9', color: activeTab === 'prescriptions' ? 'white' : 'var(--text-primary)', border: 'none', padding: '8px 16px', borderRadius: 'var(--radius-sm)', fontWeight: 700, cursor: 'pointer' }}
+          >
+            Prescriptions
+          </button>
+        </div>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {loading ? (
             <div style={{ padding: '40px', textAlign: 'center' }}>Accessing clinical vault...</div>
-          ) : records.length > 0 ? (
-            records.map((record) => (
-              <div key={record._id} style={{ 
-                background: 'white', 
-                padding: '24px', 
-                borderRadius: 'var(--radius-md)', 
-                border: '1px solid var(--border-color)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                transition: 'var(--transition-all)'
-              }}
-              className="record-card"
-              >
-                <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                  <div style={{ 
-                    width: '48px', 
-                    height: '48px', 
-                    background: 'var(--primary-light)', 
-                    color: 'var(--primary)', 
-                    borderRadius: 'var(--radius-sm)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <FiFileText size={24} />
-                  </div>
-                  <div>
-                    <h3 style={{ margin: 0, fontWeight: 700 }}>{record.title}</h3>
-                    <div style={{ display: 'flex', gap: '16px', marginTop: '4px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <FiCalendar size={14} /> {new Date(record.createdAt).toLocaleDateString()}
-                      </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <FiUser size={14} /> {record.doctor?.user?.name || 'Dr. Practitioner'}
-                      </span>
+          ) : activeTab === 'records' ? (
+            records.length > 0 ? (
+              records.map((record) => (
+                <div key={record._id} style={{ 
+                  background: 'white', 
+                  padding: '24px', 
+                  borderRadius: 'var(--radius-md)', 
+                  border: '1px solid var(--border-color)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  transition: 'var(--transition-all)'
+                }}
+                className="record-card"
+                >
+                  <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                    <div style={{ 
+                      width: '48px', 
+                      height: '48px', 
+                      background: 'var(--primary-light)', 
+                      color: 'var(--primary)', 
+                      borderRadius: 'var(--radius-sm)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <FiFileText size={24} />
+                    </div>
+                    <div>
+                      <h3 style={{ margin: 0, fontWeight: 700 }}>{record.title}</h3>
+                      <div style={{ display: 'flex', gap: '16px', marginTop: '4px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <FiCalendar size={14} /> {new Date(record.createdAt).toLocaleDateString()}
+                        </span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <FiUser size={14} /> {record.doctor?.user?.name || 'Dr. Practitioner'}
+                        </span>
+                      </div>
                     </div>
                   </div>
+                  <button 
+                    onClick={() => window.open(`http://localhost:5000${record.fileUrl || record.attachments?.[0]}`, '_blank')}
+                    style={{ 
+                    background: '#f1f5f9', 
+                    border: 'none', 
+                    padding: '8px 16px', 
+                    borderRadius: 'var(--radius-sm)', 
+                    fontWeight: 700, 
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <FiDownload /> View Details
+                  </button>
                 </div>
-                <button 
-                  onClick={() => window.open(`http://localhost:5000${record.fileUrl}`, '_blank')}
-                  style={{ 
-                  background: '#f1f5f9', 
-                  border: 'none', 
-                  padding: '8px 16px', 
-                  borderRadius: 'var(--radius-sm)', 
-                  fontWeight: 700, 
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  <FiDownload /> View Details
-                </button>
+              ))
+            ) : (
+              <div style={{ 
+                padding: '80px', 
+                textAlign: 'center', 
+                background: 'white', 
+                borderRadius: 'var(--radius-md)', 
+                border: '1px dotted var(--border-color)',
+                color: 'var(--text-muted)'
+              }}>
+                <FiFileText size={48} style={{ opacity: 0.1, marginBottom: '16px' }} />
+                <p>No medical records found in your profile.</p>
               </div>
-            ))
+            )
           ) : (
-            <div style={{ 
-              padding: '80px', 
-              textAlign: 'center', 
-              background: 'white', 
-              borderRadius: 'var(--radius-md)', 
-              border: '1px dotted var(--border-color)',
-              color: 'var(--text-muted)'
-            }}>
-              <FiFileText size={48} style={{ opacity: 0.1, marginBottom: '16px' }} />
-              <p>No medical records found in your profile.</p>
-            </div>
+            prescriptions.length > 0 ? (
+              prescriptions.map((p) => (
+                <div key={p._id} style={{ 
+                  background: 'white', padding: '24px', borderRadius: 'var(--radius-md)', 
+                  border: '1px solid var(--border-color)', transition: 'var(--transition-all)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                    <div>
+                      <h3 style={{ margin: 0, fontWeight: 700, fontSize: '1.2rem' }}>Prescription</h3>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '4px' }}>
+                        <FiCalendar size={14} style={{ marginRight: '4px' }}/> {new Date(p.createdAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontWeight: 700 }}>Dr. {p.doctor?.user?.name}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{p.doctor?.user?.specialization || 'Doctor'}</div>
+                    </div>
+                  </div>
+                  
+                  {p.advice && (
+                    <div style={{ background: '#f8fafc', padding: '16px', borderRadius: 'var(--radius-sm)', marginBottom: '16px' }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Clinical Advice</div>
+                      <div>{p.advice}</div>
+                    </div>
+                  )}
+
+                  <div style={{ border: '1px solid #e2e8f0', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                      <thead style={{ background: '#f1f5f9', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        <tr>
+                          <th style={{ padding: '12px 16px' }}>Medication</th>
+                          <th style={{ padding: '12px 16px' }}>Dosage</th>
+                          <th style={{ padding: '12px 16px' }}>Duration</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {p.medications.map((m, idx) => (
+                          <tr key={idx} style={{ borderTop: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '12px 16px', fontWeight: 600 }}>{m.name}</td>
+                            <td style={{ padding: '12px 16px' }}>{m.dosage}</td>
+                            <td style={{ padding: '12px 16px' }}>{m.duration}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ padding: '80px', textAlign: 'center', background: 'white', borderRadius: 'var(--radius-md)', border: '1px dotted var(--border-color)', color: 'var(--text-muted)' }}>
+                <FiFileText size={48} style={{ opacity: 0.1, marginBottom: '16px' }} />
+                <p>No prescriptions found.</p>
+              </div>
+            )
           )}
         </div>
 
@@ -145,7 +223,7 @@ const MedicalRecords = () => {
               padding: '32px', 
               borderRadius: 'var(--radius-lg)', 
               width: '100%', 
-              maxWIdth: '500px',
+              maxWidth: '500px',
               boxShadow: 'var(--shadow-xl)'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -204,7 +282,9 @@ const MedicalRecords = () => {
                       fd.append('file', uploadData.file);
                       fd.append('title', uploadData.title);
                       fd.append('notes', uploadData.notes);
-                      await api.post('/api/medicalRecords/upload', fd);
+                      await api.post('/api/medicalRecords/upload', fd, {
+                        headers: { "Content-Type": "multipart/form-data" }
+                      });
                       addToast('Record uploaded successfully', 'success');
                       setShowUploadModal(false);
                       setUploadData({ title: '', notes: '', file: null });

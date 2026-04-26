@@ -4,23 +4,17 @@ const Patient = require('../models/patient.model');
 const Appointment = require('../models/appointment.model');
 const Payment = require('../models/payment.model');
 
-
+// Get statistics for admin dashboard
 const getAdminDashboardStats = async (req, res) => {
   try {
-    const [totalUsers, totalDoctors, totalPatients, totalAppointments, appointments] =
-      await Promise.all([
-        User.countDocuments(),
-        User.countDocuments({ role: 'doctor' }),
-        User.countDocuments({ role: 'patient' }),
-        Appointment.countDocuments(),
-        Appointment.find().lean(),
-      ]);
-
-    const completedAppointments = appointments.filter((a) => a.status === 'completed').length;
-    const pendingAppointments = appointments.filter(
-      (a) => a.status === 'booked' || a.status === 'confirmed'
-    ).length;
-    const cancelledAppointments = appointments.filter((a) => a.status === 'cancelled').length;
+    const totalUsers = await User.countDocuments();
+    const totalDoctors = await Doctor.countDocuments();
+    const totalAppointments = await Appointment.countDocuments();
+    const totalRevenueAgg = await Payment.aggregate([
+      { $match: { status: 'paid' } },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+    const totalRevenue = totalRevenueAgg[0]?.total || 0;
 
     const recentUsers = await User.find()
       .select('name email role createdAt')
@@ -28,57 +22,35 @@ const getAdminDashboardStats = async (req, res) => {
       .limit(5)
       .lean();
 
-    const totalRevenueResult = await Payment.aggregate([
-      { $match: { status: 'paid' } },
-      { $group: { _id: null, total: { $sum: '$amount' } } }
-    ]);
-    const totalRevenue = totalRevenueResult.length > 0 ? totalRevenueResult[0].total : 0;
-
     res.json({
       stats: {
         totalUsers,
         totalDoctors,
-        totalPatients,
-        totalAppointments,
-        completedAppointments,
-        pendingAppointments,
-        cancelledAppointments,
+        totalAppointments
       },
       totalRevenue,
-      recentUsers,
+      recentUsers
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Get all users (paginated)
+// Get all users
 const getAllUsers = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-    const [users, total] = await Promise.all([
-      User.find().select('-password').sort({ createdAt: -1 }).skip(skip).limit(limit),
-      User.countDocuments()
-    ]);
-    res.json({ total, page, limit, data: users });
+    const users = await User.find().select('-password').sort({ createdAt: -1 });
+    res.json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Get all doctors with approval status (paginated)
+// Get all doctors
 const getAllDoctors = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-    const [doctors, total] = await Promise.all([
-      Doctor.find().populate('user', 'name email').sort({ createdAt: -1 }).skip(skip).limit(limit),
-      Doctor.countDocuments()
-    ]);
-    res.json({ total, page, limit, data: doctors });
+    const doctors = await Doctor.find().populate('user', 'name email').sort({ createdAt: -1 });
+    res.json(doctors);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -87,66 +59,109 @@ const getAllDoctors = async (req, res) => {
 // Approve doctor
 const approveDoctor = async (req, res) => {
   try {
-    const doctor = await Doctor.findById(req.params.id);
+    const doctor = await Doctor.findByIdAndUpdate(
+      req.params.id,
+      { isApproved: true },
+      { new: true }
+    );
     if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
-    doctor.isApproved = true;
-    doctor.approvedAt = Date.now();
-    await doctor.save();
-    res.json({ message: 'Doctor approved successfully', doctor });
+    res.json(doctor);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Reject doctor (unapprove)
+// Reject/Revoke doctor
 const rejectDoctor = async (req, res) => {
   try {
-    const doctor = await Doctor.findById(req.params.id);
+    const doctor = await Doctor.findByIdAndUpdate(
+      req.params.id,
+      { isApproved: false },
+      { new: true }
+    );
     if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
-    doctor.isApproved = false;
-    doctor.approvedAt = null;
-    await doctor.save();
-    res.json({ message: 'Doctor approval revoked', doctor });
+    res.json(doctor);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Get all appointments (paginated)
+// Get all appointments
 const getAllAppointments = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-    const [appointments, total] = await Promise.all([
-      Appointment.find()
-        .populate({ path: 'patient', populate: { path: 'user', select: 'name email' } })
-        .populate({ path: 'doctor', populate: { path: 'user', select: 'name email' } })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit),
-      Appointment.countDocuments()
-    ]);
-    res.json({ total, page, limit, data: appointments });
+    const appointments = await Appointment.find()
+      .populate({ path: 'doctor', populate: { path: 'user', select: 'name' } })
+      .populate({ path: 'patient', populate: { path: 'user', select: 'name' } })
+      .sort({ createdAt: -1 });
+    res.json(appointments);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Get payment stats
+// Get payment statistics
 const getPaymentStats = async (req, res) => {
   try {
-    const totalRevenue = await Payment.aggregate([
-      { $match: { status: 'paid' } },
-      { $group: { _id: null, total: { $sum: '$amount' } } }
+    const stats = await Payment.aggregate([
+      {
+        $group: {
+          _id: '$status',
+          totalAmount: { $sum: '$amount' },
+          count: { $sum: 1 }
+        }
+      }
     ]);
-    const statusCounts = await Payment.aggregate([
-      { $group: { _id: '$status', count: { $sum: 1 } } }
-    ]);
-    res.json({
-      totalRevenue: totalRevenue.length > 0 ? totalRevenue[0].total : 0,
-      statusCounts,
+    res.json(stats);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get all payments (admin)
+const getAllPayments = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 100;
+    const skip = (page - 1) * limit;
+
+    const payments = await Payment.find()
+      .populate('doctor')
+      .populate({ 
+        path: 'appointment', 
+        populate: [
+          { path: 'doctor', populate: { path: 'user', select: 'name' } },
+          { path: 'patient', populate: { path: 'user', select: 'name' } }
+        ]
+      })
+      .populate({
+        path: 'patient',
+        populate: { path: 'user', select: 'name' }
+      })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+      
+    const formattedPayments = payments.map(p => {
+      const appt = p.appointment || {};
+      const doctorUser = appt.doctor?.user || p.doctor?.user;
+      const patientUser = appt.patient?.user || p.patient?.user;
+
+      return {
+        _id: p._id,
+        amount: p.amount,
+        status: p.status,
+        method: p.method,
+        createdAt: p.createdAt,
+        paidAt: p.paidAt,
+        referenceId: p.referenceId,
+        doctorName: p.doctorName || doctorUser?.name || 'MediSync Practitioner',
+        patient: { user: { name: patientUser?.name || 'MediSync Patient' } },
+        notes: p.notes,
+        specialty: p.specialty || appt.doctor?.specialization || ''
+      };
     });
+
+    res.json(formattedPayments);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -159,7 +174,6 @@ const deleteUser = async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
     if (user.role === 'admin') return res.status(403).json({ message: 'Cannot delete admin users' });
     
-    // Also delete associated profiles
     if (user.role === 'doctor') await Doctor.findOneAndDelete({ user: user._id });
     if (user.role === 'patient') await Patient.findOneAndDelete({ user: user._id });
     
@@ -178,5 +192,6 @@ module.exports = {
   rejectDoctor,
   getAllAppointments,
   getPaymentStats,
+  getAllPayments,
   deleteUser
 };

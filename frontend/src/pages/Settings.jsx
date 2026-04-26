@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import DashboardLayout from "../components/DashboardLayout";
 import useAuth from "../hooks/useAuth";
 import { useToast } from "../components/ToastContext";
 import Button from "../components/Button";
@@ -38,15 +37,18 @@ const Settings = () => {
 	}, [user]);
 
 	const handleChange = (e) => {
-		setForm({ ...form, [e.target.name]: e.target.value });
+		let { name, value } = e.target;
+		if (name === "phone") {
+			value = value.replace(/\D/g, '').slice(0, 10);
+		}
+		setForm({ ...form, [name]: value });
 	};
 
 	const handleRequestUpdate = async (e) => {
 		e.preventDefault();
 		setLoading(true);
 		try {
-			// Request OTP for profile update
-			await api.post("/api/auth/send-otp", { email: form.email, reason: "update_profile" });
+			await api.post("/api/auth/send-otp", { email: form.email, purpose: "update-profile" });
 			setOtpContext("profile");
 			setShowOtp(true);
 			addToast("Verification code sent to your email.", "success");
@@ -109,7 +111,7 @@ const Settings = () => {
 		}
 		setLoading(true);
 		try {
-			await api.post("/api/auth/send-otp", { email: form.email, reason: "update_profile" });
+			await api.post("/api/auth/send-otp", { email: form.email, purpose: "update-profile" });
 			setOtpContext("password");
 			setShowOtp(true);
 			addToast("Verification code sent to your email.", "success");
@@ -161,7 +163,7 @@ const Settings = () => {
 							<div className={styles.formGrid}>
 								<InputField label="Full Name" name="fullName" value={form.fullName} onChange={handleChange} placeholder="Full Name" />
 								<InputField label="Email Address (Immutable)" name="email" value={form.email} readOnly disabled />
-								<InputField label="Phone Number" name="phone" value={form.phone} onChange={handleChange} placeholder="Phone Number" />
+								<InputField label="Phone Number" name="phone" type="tel" value={form.phone} onChange={handleChange} placeholder="Phone Number" maxLength={10} />
 								<InputField label="Date of Birth" name="dateOfBirth" value={form.dateOfBirth} onChange={handleChange} type="date" />
 							</div>
 

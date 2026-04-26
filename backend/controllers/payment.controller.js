@@ -40,7 +40,7 @@ const createPayment = async (req, res) => {
     };
 
     if (appointmentId) {
-      const appointment = await Appointment.findById(appointmentId).populate('doctor', 'name');
+      const appointment = await Appointment.findById(appointmentId).populate({ path: 'doctor', populate: { path: 'user', select: 'name' } });
 
       if (!appointment) {
         return res.status(404).json({ message: 'Appointment not found' });
@@ -53,7 +53,7 @@ const createPayment = async (req, res) => {
 
       payload.appointment = appointment._id;
       payload.doctor = appointment.doctor?._id || appointment.doctor;
-      payload.doctorName = doctorName || appointment.doctor?.name || '';
+      payload.doctorName = doctorName || appointment.doctor?.user?.name || appointment.doctor?.name || '';
       payload.specialty = specialty || (appointment.doctor?.specialization || '');
     } else {
       payload.doctorName = doctorName || '';
@@ -70,16 +70,24 @@ const createPayment = async (req, res) => {
 // Get payments for the authenticated user / patient
 const getMyPayments = async (req, res) => {
   try {
-    let query = { $or: [{ patient: req.user._id }, { user: req.user._id }] };
+    const Patient = require('../models/patient.model');
+    const Doctor = require('../models/doctor.model');
+    const Appointment = require('../models/appointment.model');
 
-    if (req.user.role === 'doctor') {
-      const doctorModel = require('../models/doctor.model');
-      const appointmentModel = require('../models/appointment.model');
-      const doctorProfile = await doctorModel.findOne({ user: req.user._id });
-      
+    let query = {};
+
+    if (req.user.role === 'patient') {
+      const patientProfile = await Patient.findOne({ user: req.user._id });
+      if (patientProfile) {
+        query = { patient: patientProfile._id };
+      } else {
+        query = { user: req.user._id }; // Fallback
+      }
+    } else if (req.user.role === 'doctor') {
+      const doctorProfile = await Doctor.findOne({ user: req.user._id });
       if (doctorProfile) {
         // Include payments directly linked to doctor OR linked via appointments
-        const doctorAppointments = await appointmentModel.find({ doctor: doctorProfile._id }).distinct('_id');
+        const doctorAppointments = await Appointment.find({ doctor: doctorProfile._id }).distinct('_id');
         query = { 
           $or: [
             { doctor: doctorProfile._id }, 
@@ -87,19 +95,40 @@ const getMyPayments = async (req, res) => {
           ] 
         };
       }
+    } else if (req.user.role === 'admin') {
+      query = {}; // Admin sees all if using this endpoint
     }
 
     const payments = await Payment.find(query)
-      .populate('patient', 'user')
       .populate({
         path: 'patient',
         populate: { path: 'user', select: 'name email' }
+      })
+      .populate({
+        path: 'doctor',
+        populate: { path: 'user', select: 'name email' }
+      })
+      .populate({
+        path: 'appointment',
+        populate: { path: 'doctor', populate: { path: 'user', select: 'name' } }
       })
       .sort({ createdAt: -1 })
       .limit(100)
       .lean();
 
-    return res.status(200).json(payments);
+    // Map to ensure doctorName is populated from relations if missing in field
+    const formattedPayments = payments.map(p => ({
+      ...p,
+      doctorName: p.doctorName || p.doctor?.user?.name || p.appointment?.doctor?.user?.name || 'MediSync Practitioner',
+      patient: { 
+        ...p.patient, 
+        user: { 
+          name: p.patient?.user?.name || 'MediSync Patient' 
+        } 
+      }
+    }));
+
+    return res.status(200).json(formattedPayments);
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

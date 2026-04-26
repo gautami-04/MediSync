@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getMyDoctorStats } from '../../services/doctor.service';
+import { getMyDoctorStats, getMyDoctorProfile } from '../../services/doctor.service';
 import { getDoctorAppointments } from '../../services/appointment.service';
 import useAuth from '../../hooks/useAuth';
 import { useToast } from '../../components/ToastContext';
@@ -24,10 +24,10 @@ const StatCard = ({ title, value, badgeText, badgeClass, icon, onClick }) => (
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState({ todaysAppointments: 0, totalPatients: 0, totalEarnings: 0 });
   const [loading, setLoading] = useState(true);
   const [appointments, setAppointments] = useState([]);
-  const [selectedPatient, setSelectedPatient] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const { addToast } = useToast();
@@ -36,10 +36,12 @@ const Dashboard = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const [statsData, apptData] = await Promise.all([
+        const [profileData, statsData, apptData] = await Promise.all([
+          getMyDoctorProfile(),
           getMyDoctorStats(),
           getDoctorAppointments()
         ]);
+        setProfile(profileData);
         setStats(statsData);
         setAppointments(apptData.appointments || apptData || []);
       } catch (err) {
@@ -52,6 +54,23 @@ const Dashboard = () => {
   }, []);
 
   if (loading) return <div>Analyzing clinical schedule...</div>;
+
+  if (profile && !profile.isApproved) {
+    return (
+      <div className={styles.container} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
+        <div style={{ width: '80px', height: '80px', background: '#fff7ed', color: '#ea580c', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        </div>
+        <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--bg-dark)', marginBottom: '12px' }}>Verification Pending</h1>
+        <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', fontSize: '1.1rem', lineHeight: '1.6' }}>
+          Your profile is currently being reviewed by our administration team. You will gain full access to the clinical dashboard once your credentials are verified.
+        </p>
+        <div style={{ marginTop: '32px', padding: '12px 24px', background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border-color)', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+          Typical verification time: 24-48 hours
+        </div>
+      </div>
+    );
+  }
 
   return (
       <div className={styles.container}>
@@ -131,7 +150,6 @@ const Dashboard = () => {
                 <th>Patient Name</th>
                 <th>Last Interaction</th>
                 <th>Clinical Status</th>
-                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -163,18 +181,12 @@ const Dashboard = () => {
                           ACTIVE
                         </div>
                       </td>
-                      <td>
-                        <button className={styles.actionBtn} onClick={() => {
-                          setSelectedPatient(a.patient);
-                          addToast(`Viewing profile of ${a.patient?.user?.name}`, 'info');
-                        }}>View Profile</button>
-                      </td>
                     </tr>
                   ));
                 })()
               ) : (
                 <tr>
-                  <td colSpan="4" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No patient records available in current portfolio.</td>
+                  <td colSpan="3" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No patient records available in current portfolio.</td>
                 </tr>
               )}
             </tbody>
@@ -186,28 +198,8 @@ const Dashboard = () => {
             onPageChange={setCurrentPage} 
           />
         </div>
-
-        {selectedPatient && (
-          <div className={styles.modalOverlay} onClick={() => setSelectedPatient(null)}>
-            <div className={styles.patientModal} onClick={e => e.stopPropagation()}>
-              <div className={styles.modalHeader}>
-                <h3>Patient Clinical Brief</h3>
-                <button onClick={() => setSelectedPatient(null)} className={styles.closeBtn}>×</button>
-              </div>
-              <div className={styles.modalBody}>
-                <div className={styles.patientBriefInfo}>
-                  <div className={styles.infoRow}><strong>Name:</strong> {selectedPatient.user?.name}</div>
-                  <div className={styles.infoRow}><strong>Email:</strong> {selectedPatient.user?.email}</div>
-                  <div className={styles.infoRow}><strong>Gender:</strong> {selectedPatient.gender || 'Not specified'}</div>
-                  <div className={styles.infoRow}><strong>Blood Group:</strong> {selectedPatient.bloodGroup || 'N/A'}</div>
-                  <div className={styles.infoRow}><strong>Address:</strong> {selectedPatient.address || 'N/A'}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-  );
+    );
 };
 
 export default Dashboard;

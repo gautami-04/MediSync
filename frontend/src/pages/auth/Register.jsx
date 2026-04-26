@@ -29,7 +29,10 @@ const Register = () => {
 	const navigate = useNavigate();
 
 	const handleChange = (e) => {
-		const { name, value } = e.target;
+		let { name, value } = e.target;
+		if (name === "phone") {
+			value = value.replace(/\D/g, '').slice(0, 10);
+		}
 		setForm(prev => ({ ...prev, [name]: value }));
 		setErrors(prev => ({ ...prev, [name]: "" }));
 	};
@@ -95,6 +98,7 @@ const Register = () => {
 					<div className={styles.fieldGrid}>
 						<InputField label="Full Name" name="fullName" value={form.fullName} onChange={handleChange} placeholder="e.g. Julian Pierce" error={errors.fullName} required />
 						<InputField label="Email" name="email" type="email" value={form.email} onChange={handleChange} placeholder="julian@clinic.com" error={errors.email} required />
+						<InputField label="Phone Number" name="phone" type="tel" value={form.phone} onChange={handleChange} placeholder="10-digit number" error={errors.phone} required />
 						
 						{role === "patient" ? (
 							<>

@@ -82,6 +82,7 @@ const AuthRoutes = () => {
           <Route path="/medical-records" element={<MedicalRecords />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/book-appointment" element={<Appointments />} />
+          <Route path="/notifications" element={<Notifications />} />
 
           {/* Doctor Specific */}
           <Route path="/doctor/dashboard" element={<DoctorDashboard />} />

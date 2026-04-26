@@ -1,102 +1,257 @@
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
-.headerTitle { margin: 0; font-size: 2rem; font-weight: 700; color: var(--bg-dark); }
-.headerSubtitle { margin: 8px 0 0; color: var(--text-secondary); }
-.btnPrimary { background: var(--brand-primary); color: white; border: none; border-radius: 12px; padding: 12px 24px; display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; font-size: 0.95rem; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(33, 103, 78, 0.2); }
-.btnPrimary:hover { background: var(--brand-hover); transform: translateY(-1px); }
-
-/* Stats Summary */
-.statsRow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
-.statMini { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); text-align: center; }
-.statMiniValue { font-size: 1.8rem; font-weight: 700; color: var(--bg-dark); }
-.statMiniLabel { font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
-
-/* Filter Tabs */
-.filterTabs { display: flex; gap: 8px; margin-bottom: 32px; background: white; padding: 6px; border-radius: 16px; width: fit-content; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
-.filterTab { padding: 10px 24px; border-radius: 12px; border: none; background: transparent; color: var(--text-secondary); font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; }
-.filterTab:hover { color: var(--brand-primary); }
-.filterTabActive { background: var(--brand-primary); color: white; box-shadow: 0 4px 12px rgba(33, 103, 78, 0.2); }
-.filterCount { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; border-radius: 99px; font-size: 0.7rem; font-weight: 700; margin-left: 8px; padding: 0 6px; }
-.filterTabActive .filterCount { background: rgba(255,255,255,0.3); color: white; }
-.filterTab .filterCount { background: rgba(0,0,0,0.06); color: var(--text-secondary); }
-
-/* Appointment Cards */
-.appointmentsList { display: flex; flex-direction: column; gap: 16px; }
-.appointmentCard { background: white; border-radius: 20px; padding: 24px 28px; display: flex; align-items: center; gap: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.03); transition: all 0.2s ease; }
-.appointmentCard:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.06); transform: translateY(-2px); }
-.appointmentIcon { width: 56px; height: 56px; border-radius: 16px; background: var(--input-bg); color: var(--brand-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.appointmentInfo { flex: 1; }
-.doctorName { font-weight: 700; font-size: 1.05rem; color: var(--bg-dark); margin-bottom: 4px; }
-.appointmentMeta { font-size: 0.85rem; color: var(--text-secondary); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-.feeTag { display: inline-flex; align-items: center; gap: 4px; background: #fff8e1; color: #f57f17; padding: 2px 10px; border-radius: 99px; font-size: 0.8rem; font-weight: 700; }
-.dateTimeBlock { text-align: right; flex-shrink: 0; }
-.dateText { font-weight: 700; font-size: 1rem; color: var(--brand-primary); margin-bottom: 4px; }
-.timeText { font-size: 0.85rem; color: var(--text-secondary); }
-
-/* Status Pills */
-.statusPill { display: inline-block; padding: 4px 14px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-.statusBooked { background: #e3f2fd; color: #1565c0; }
-.statusConfirmed { background: #e8f5e9; color: #2e7d32; }
-.statusCompleted { background: #f3e5f5; color: #7b1fa2; }
-.statusCancelled { background: #fce4ec; color: #c62828; }
-.statusRescheduled { background: #fff3e0; color: #e65100; }
-
-/* Action Buttons */
-.actionBtns { display: flex; gap: 8px; flex-shrink: 0; }
-.btnCancel { padding: 8px 18px; border-radius: 10px; border: 1px solid #e0e0e0; background: white; color: #c62828; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s ease; }
-.btnCancel:hover { background: #fce4ec; border-color: #c62828; }
-.btnReschedule { padding: 8px 18px; border-radius: 10px; border: 1px solid #e0e0e0; background: white; color: #e65100; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s ease; }
-.btnReschedule:hover { background: #fff3e0; border-color: #e65100; }
-
-/* Modal / Book Form */
-.modalOverlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.2s ease; }
-.modal { background: white; border-radius: 24px; padding: 40px; width: 100%; max-width: 560px; box-shadow: 0 24px 48px rgba(0, 0, 0, 0.15); animation: slideUp 0.3s ease; max-height: 90vh; overflow-y: auto; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-.modalTitle { margin: 0 0 8px; font-size: 1.5rem; font-weight: 700; color: var(--bg-dark); }
-.modalSubtitle { margin: 0 0 28px; color: var(--text-secondary); font-size: 0.95rem; }
-.formGroup { margin-bottom: 20px; }
-.formLabel { display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-.formInput, .formSelect, .formTextarea { width: 100%; padding: 14px 18px; border: 2px solid var(--input-bg); border-radius: 12px; font-size: 0.95rem; color: var(--text-primary); background: var(--input-bg); outline: none; transition: border-color 0.2s ease; box-sizing: border-box; }
-.formInput:focus, .formSelect:focus, .formTextarea:focus { border-color: var(--brand-primary); background: white; }
-.formTextarea { resize: vertical; min-height: 80px; }
-
-/* Doctor Preview Card in Modal */
-.doctorPreview { background: var(--input-bg); border-radius: 16px; padding: 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; animation: fadeIn 0.3s ease; }
-.doctorPreviewAvatar { width: 52px; height: 52px; border-radius: 14px; background: var(--brand-primary); color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 700; font-size: 1.2rem; }
-.doctorPreviewInfo { flex: 1; }
-.doctorPreviewName { font-weight: 700; color: var(--bg-dark); font-size: 1rem; margin-bottom: 2px; }
-.doctorPreviewSpec { font-size: 0.85rem; color: var(--text-secondary); }
-.doctorPreviewDetails { display: flex; gap: 16px; margin-top: 6px; flex-wrap: wrap; }
-.doctorPreviewTag { font-size: 0.8rem; display: flex; align-items: center; gap: 4px; color: var(--text-secondary); }
-.doctorPreviewFee { background: white; border-radius: 12px; padding: 10px 18px; text-align: center; flex-shrink: 0; }
-.doctorPreviewFeeValue { font-size: 1.4rem; font-weight: 700; color: var(--brand-primary); }
-.doctorPreviewFeeLabel { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-
-.modalActions { display: flex; gap: 12px; margin-top: 28px; }
-.btnSubmit { flex: 1; padding: 14px; border-radius: 12px; border: none; background: var(--brand-primary); color: white; font-weight: 700; font-size: 1rem; cursor: pointer; transition: background 0.2s ease; }
-.btnSubmit:hover { background: var(--brand-hover); }
-.btnSubmit:disabled { opacity: 0.6; cursor: not-allowed; }
-.btnClose { flex: 0.5; padding: 14px; border-radius: 12px; border: 2px solid #e0e0e0; background: white; color: var(--text-secondary); font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.2s ease; }
-.btnClose:hover { border-color: var(--text-secondary); }
-
-/* Empty State */
-.emptyState { text-align: center; padding: 60px 24px; background: white; border-radius: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.03); }
-.emptyIcon { width: 80px; height: 80px; border-radius: 50%; background: var(--input-bg); color: var(--brand-primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
-.emptyTitle { font-size: 1.3rem; font-weight: 700; color: var(--bg-dark); margin: 0 0 8px; }
-.emptyText { color: var(--text-secondary); font-size: 0.95rem; margin: 0 0 24px; }
-
-/* Messages */
-.errorMsg { background: #fce4ec; color: #c62828; padding: 12px 20px; border-radius: 12px; font-weight: 600; margin-bottom: 16px; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; animation: fadeIn 0.3s ease; }
-.successMsg { background: #e8f5e9; color: #2e7d32; padding: 12px 20px; border-radius: 12px; font-weight: 600; margin-bottom: 16px; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; animation: fadeIn 0.3s ease; }
-.msgClose { background: none; border: none; cursor: pointer; font-size: 1.2rem; opacity: 0.6; padding: 0 4px; color: inherit; }
-.msgClose:hover { opacity: 1; }
-
-@media (max-width: 992px) { .statsRow { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 768px) {
-  .appointmentCard { flex-direction: column; align-items: flex-start; }
-  .dateTimeBlock { text-align: left; }
-  .filterTabs { width: 100%; overflow-x: auto; }
-  .header { flex-direction: column; align-items: flex-start; gap: 16px; }
-  .statsRow { grid-template-columns: 1fr 1fr; }
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
 }
-@media (max-width: 480px) { .statsRow { grid-template-columns: 1fr; } }
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.headerTitle {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--text-main);
+  letter-spacing: -1px;
+}
+
+.headerSubtitle {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin-top: 4px;
+}
+
+.btnPrimary {
+  background: var(--brand-primary);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 12px 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: var(--transition-all);
+  box-shadow: 0 8px 16px rgba(48, 164, 108, 0.2);
+}
+
+.btnPrimary:hover {
+  background: var(--brand-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 20px rgba(48, 164, 108, 0.25);
+}
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.statMini {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  transition: var(--transition-all);
+}
+
+.statMiniValue {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--text-main);
+  letter-spacing: -1px;
+}
+
+.statMiniLabel {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+.filterTabs {
+  display: flex;
+  gap: 12px;
+  background: #f1f5f9;
+  padding: 6px;
+  border-radius: 16px;
+  width: fit-content;
+}
+
+.filterTab {
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.filterTabActive {
+  background: white;
+  color: var(--brand-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.appointmentsList {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.appointmentCard {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  border: 1px solid var(--border-color);
+  transition: var(--transition-all);
+}
+
+.appointmentCard:hover {
+  border-color: var(--brand-primary);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+}
+
+.appointmentIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: var(--brand-light);
+  color: var(--brand-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.appointmentInfo {
+  flex: 1;
+}
+
+.doctorName {
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+.appointmentMeta {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.statusPill {
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.statusConfirmed { background: #ecfdf5; color: #059669; }
+.statusCompleted { background: #f0f9ff; color: #0284c7; }
+.statusCancelled { background: #fef2f2; color: #dc2626; }
+.statusPending { background: #fffbeb; color: #d97706; }
+
+.actionBtns {
+  display: flex;
+  gap: 12px;
+}
+
+.btnReview {
+  padding: 10px 20px;
+  border-radius: 12px;
+  background: var(--brand-primary);
+  color: white;
+  font-weight: 700;
+  font-size: 0.85rem;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-all);
+}
+
+.btnReview:hover {
+  background: var(--brand-hover);
+  box-shadow: 0 4px 12px rgba(48, 164, 108, 0.2);
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  border-radius: 28px;
+  padding: 48px;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: var(--shadow-xl);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.formGroup {
+  margin-bottom: 24px;
+}
+
+.formLabel {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 10px;
+}
+
+.formInput, .formSelect, .formTextarea {
+  width: 100%;
+  padding: 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 14px;
+  font-size: 1rem;
+  background: #f8fafc;
+  transition: var(--transition-fast);
+}
+
+.formInput:focus, .formSelect:focus, .formTextarea:focus {
+  border-color: var(--brand-primary);
+  background: white;
+  outline: none;
+  box-shadow: 0 0 0 4px var(--brand-light);
+}
+
+@media (max-width: 1024px) {
+  .statsRow { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .header { flex-direction: column; gap: 20px; }
+  .appointmentCard { flex-direction: column; align-items: flex-start; }
+  .statsRow { grid-template-columns: 1fr; }
+}

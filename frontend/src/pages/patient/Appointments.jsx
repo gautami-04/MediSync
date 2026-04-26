@@ -3,6 +3,10 @@ import DashboardLayout from "../../components/DashboardLayout";
 import { getMyAppointments, bookAppointment, cancelAppointment, rescheduleAppointment } from "../../services/appointment.service";
 import { getAllDoctors } from "../../services/doctor.service";
 import styles from "./Appointments.module.css";
+import { useLocation } from "react-router-dom";
+import Pagination from "../../components/Pagination";
+import api from "../../services/api";
+import { useToast } from "../../components/ToastContext";
 
 const STATUS_CLASS = {
 	booked: styles.statusBooked,
@@ -19,11 +23,9 @@ const formatDate = (value) => {
 	return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
 };
 
-import { useLocation } from "react-router-dom";
-import Pagination from "../../components/Pagination";
-
 const PatientAppointments = () => {
 	const location = useLocation();
+	const { addToast } = useToast();
 	const [appointments, setAppointments] = useState([]);
 	const [totalCount, setTotalCount] = useState(0);
 	const [stats, setStats] = useState({ total: 0, upcoming: 0, completed: 0, cancelled: 0 });
@@ -44,8 +46,28 @@ const PatientAppointments = () => {
 	const [reviewTarget, setReviewTarget] = useState(null);
 	const [reviewData, setReviewData] = useState({ rating: 5, comment: "" });
 	const [submittingReview, setSubmittingReview] = useState(false);
-	const [formData, setFormData] = useState({ doctorId: "", date: "", time: "", reason: "" });
+	const [formData, setFormData] = useState({ doctorId: "", date: "", time: "", reason: "", paymentMode: "prepaid" });
 	const [rescheduleData, setRescheduleData] = useState({ date: "", time: "" });
+	const [showPaymentModal, setShowPaymentModal] = useState(false);
+	const [paymentProcessing, setPaymentProcessing] = useState(false);
+	const [selectedSlot, setSelectedSlot] = useState(null);
+
+	const getDayOfWeek = (dateString) => {
+		const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+		const d = new Date(dateString);
+		return days[d.getDay()];
+	};
+
+	const selectedDoctor = useMemo(() => {
+		if (!formData.doctorId) return null;
+		return doctors.find((d) => d._id === formData.doctorId) || null;
+	}, [formData.doctorId, doctors]);
+
+	const filteredSlots = useMemo(() => {
+		if (!selectedDoctor || !formData.date) return [];
+		const selectedDay = getDayOfWeek(formData.date);
+		return selectedDoctor.availableSlots?.filter(slot => slot.day === selectedDay && !slot.isBooked) || [];
+	}, [selectedDoctor, formData.date]);
 
 	// Auto-open modal if navigating from doctor search
 	useEffect(() => {
@@ -74,14 +96,6 @@ const PatientAppointments = () => {
 		}
 	}, [currentPage, filter]);
 
-	// Auto-dismiss messages after 4 seconds
-	useEffect(() => {
-		if (error) { const t = setTimeout(() => setError(""), 4000); return () => clearTimeout(t); }
-	}, [error]);
-	useEffect(() => {
-		if (success) { const t = setTimeout(() => setSuccess(""), 4000); return () => clearTimeout(t); }
-	}, [success]);
-
 	const loadDoctors = useCallback(async () => {
 		try {
 			const data = await getAllDoctors();
@@ -96,16 +110,23 @@ const PatientAppointments = () => {
 		loadDoctors();
 	}, [loadAppointments, loadDoctors]);
 
-	const filteredAppointments = appointments; // Filtered by backend
+	const filteredAppointments = appointments;
 
-	// Selected doctor preview
-	const selectedDoctor = useMemo(() => {
-		if (!formData.doctorId) return null;
-		return doctors.find((d) => d._id === formData.doctorId) || null;
-	}, [formData.doctorId, doctors]);
-
-	const handleBook = async (e) => {
+	const handleBookInitiate = (e) => {
 		e.preventDefault();
+		if (!formData.doctorId || !formData.date || !formData.time) {
+			setError("Please select a doctor, date, and time slot.");
+			return;
+		}
+		
+		if (formData.paymentMode === 'prepaid') {
+			setShowPaymentModal(true);
+		} else {
+			handleBook();
+		}
+	};
+
+	const handleBook = async () => {
 		setBooking(true);
 		setError("");
 		setSuccess("");
@@ -113,13 +134,24 @@ const PatientAppointments = () => {
 			await bookAppointment(formData);
 			setSuccess("Appointment booked successfully! Your doctor will confirm shortly.");
 			setShowBookModal(false);
-			setFormData({ doctorId: "", date: "", time: "", reason: "" });
+			setShowPaymentModal(false);
+			setFormData({ doctorId: "", date: "", time: "", reason: "", paymentMode: "prepaid" });
+			setSelectedSlot(null);
 			await loadAppointments();
 		} catch (err) {
 			setError(err?.response?.data?.message || "Failed to book appointment.");
 		} finally {
 			setBooking(false);
 		}
+	};
+
+	const handleMockPayment = async () => {
+		setPaymentProcessing(true);
+		// Mock delay for payment processing
+		setTimeout(() => {
+			setPaymentProcessing(false);
+			handleBook();
+		}, 2000);
 	};
 
 	const handleCancel = async (id) => {
@@ -133,12 +165,6 @@ const PatientAppointments = () => {
 		} catch (err) {
 			setError(err?.response?.data?.message || "Failed to cancel appointment.");
 		}
-	};
-
-	const openReschedule = (appt) => {
-		setRescheduleTarget(appt);
-		setRescheduleData({ date: appt.date || "", time: appt.time || "" });
-		setShowRescheduleModal(true);
 	};
 
 	const handleReschedule = async (e) => {
@@ -196,8 +222,6 @@ const PatientAppointments = () => {
 		{ key: "cancelled", label: "Cancelled", count: stats.cancelled },
 	];
 
-	const canModify = (status) => ["booked", "confirmed", "rescheduled"].includes(status);
-
 	return (
 		<>
 			<div className={styles.header}>
@@ -214,7 +238,6 @@ const PatientAppointments = () => {
 			{error ? <div className={styles.errorMsg}>{error}<button className={styles.msgClose} onClick={() => setError("")}>×</button></div> : null}
 			{success ? <div className={styles.successMsg}>{success}<button className={styles.msgClose} onClick={() => setSuccess("")}>×</button></div> : null}
 
-			{/* Stats Row */}
 			<div className={styles.statsRow}>
 				<div className={styles.statMini}>
 					<div className={styles.statMiniValue}>{stats.total}</div>
@@ -234,7 +257,6 @@ const PatientAppointments = () => {
 				</div>
 			</div>
 
-			{/* Filter Tabs with Counts */}
 			<div className={styles.filterTabs}>
 				{filters.map((f) => (
 					<button key={f.key} className={`${styles.filterTab} ${filter === f.key ? styles.filterTabActive : ""}`} onClick={() => setFilter(f.key)}>
@@ -244,7 +266,6 @@ const PatientAppointments = () => {
 				))}
 			</div>
 
-			{/* Appointments List */}
 			{loading ? (
 				<div style={{ textAlign: "center", padding: "40px", color: "var(--text-secondary)" }}>Loading appointments...</div>
 			) : filteredAppointments.length === 0 ? (
@@ -275,6 +296,11 @@ const PatientAppointments = () => {
 										<span className={styles.feeTag}>₹{appt.consultationFee}</span>
 									)}
 									{appt.reason ? <span>• {appt.reason}</span> : null}
+									{appt.paymentMode && (
+										<span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px', background: '#f1f5f9', color: '#64748b', marginLeft: '8px' }}>
+											{appt.paymentMode === 'prepaid' ? 'Prepaid' : 'Pay Later'}
+										</span>
+									)}
 								</div>
 							</div>
 							<div className={styles.dateTimeBlock}>
@@ -284,39 +310,39 @@ const PatientAppointments = () => {
 							<span className={`${styles.statusPill} ${STATUS_CLASS[appt.status] || styles.statusBooked}`}>
 								{appt.status || "booked"}
 							</span>
-								<div className={styles.appointmentActions}>
-									{appt.status === "booked" && (
-										<>
-											<button 
-												className={styles.btnSecondary} 
-												onClick={() => {
-													setRescheduleTarget(appt);
-													setRescheduleData({ date: appt.date || "", time: appt.time || "" });
-													setShowRescheduleModal(true);
-												}}
-											>
-												Reschedule
-											</button>
-											<button 
-												className={styles.btnDanger} 
-												onClick={() => handleCancel(appt._id)}
-											>
-												Cancel
-											</button>
-										</>
-									)}
-									{appt.status === "completed" && (
+							<div className={styles.appointmentActions}>
+								{appt.status === "booked" && (
+									<>
 										<button 
 											className={styles.btnSecondary} 
 											onClick={() => {
-												setReviewTarget(appt);
-												setShowReviewModal(true);
+												setRescheduleTarget(appt);
+												setRescheduleData({ date: appt.date || "", time: appt.time || "" });
+												setShowRescheduleModal(true);
 											}}
 										>
-											Leave Review
+											Reschedule
 										</button>
-									)}
-								</div>
+										<button 
+											className={styles.btnDanger} 
+											onClick={() => handleCancel(appt._id)}
+										>
+											Cancel
+										</button>
+									</>
+								)}
+								{(appt.status === "completed" || appt.status === "confirmed") && (
+									<button 
+										className={styles.btnReview} 
+										onClick={() => {
+											setReviewTarget(appt);
+											setShowReviewModal(true);
+										}}
+									>
+										Leave Review
+									</button>
+								)}
+							</div>
 						</div>
 					))}
 					
@@ -332,13 +358,12 @@ const PatientAppointments = () => {
 				</div>
 			)}
 
-			{/* ======== Book Appointment Modal ======== */}
+			{/* Book Appointment Modal */}
 			{showBookModal && (
 				<div className={styles.modalOverlay} onClick={() => setShowBookModal(false)}>
 					<div className={styles.modal} onClick={(e) => e.stopPropagation()}>
 						<h2 className={styles.modalTitle}>Book New Appointment</h2>
-						<p className={styles.modalSubtitle}>Select a doctor and preferred time slot.</p>
-						<form onSubmit={handleBook}>
+						<form onSubmit={handleBookInitiate}>
 							<div className={styles.formGroup}>
 								<label className={styles.formLabel}>Doctor</label>
 								<select
@@ -356,7 +381,6 @@ const PatientAppointments = () => {
 								</select>
 							</div>
 
-							{/* Doctor Preview Card with Fee */}
 							{selectedDoctor && (
 								<div className={styles.doctorPreview}>
 									<div className={styles.doctorPreviewAvatar}>
@@ -365,20 +389,6 @@ const PatientAppointments = () => {
 									<div className={styles.doctorPreviewInfo}>
 										<div className={styles.doctorPreviewName}>{selectedDoctor?.user?.name || "Doctor"}</div>
 										<div className={styles.doctorPreviewSpec}>{selectedDoctor.specialization}</div>
-										<div className={styles.doctorPreviewDetails}>
-											{selectedDoctor.hospital && (
-												<span className={styles.doctorPreviewTag}>
-													<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-													{selectedDoctor.hospital}
-												</span>
-											)}
-											{selectedDoctor.experienceYears > 0 && (
-												<span className={styles.doctorPreviewTag}>
-													<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-													{selectedDoctor.experienceYears} yrs exp
-												</span>
-											)}
-										</div>
 									</div>
 									<div className={styles.doctorPreviewFee}>
 										<div className={styles.doctorPreviewFeeValue}>₹{selectedDoctor.consultationFee || 0}</div>
@@ -387,34 +397,81 @@ const PatientAppointments = () => {
 								</div>
 							)}
 
-							<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-								<div style={{ gridColumn: '1 / -1', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '8px' }}>
-									<label className={styles.formLabel} style={{ marginBottom: '8px', display: 'block' }}>Doctor's Available Times</label>
-									<div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-										{selectedDoctor?.availableSlots?.length > 0 ? selectedDoctor.availableSlots.map((slot, i) => (
-											<div key={i} style={{ background: 'white', padding: '6px 12px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-												{slot.day}: {slot.startTime} - {slot.endTime}
-											</div>
-										)) : <span style={{fontSize: '0.8rem', color: 'var(--text-muted)'}}>No slots found.</span>}
+							<div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "16px" }}>
+								<div className={styles.formGroup}>
+									<label className={styles.formLabel}>Select Date</label>
+									<input 
+										type="date" 
+										className={styles.formInput} 
+										value={formData.date} 
+										onChange={(e) => {
+											setFormData({ ...formData, date: e.target.value, time: "" });
+											setSelectedSlot(null);
+										}} 
+										min={new Date().toISOString().split("T")[0]} 
+										required 
+									/>
+								</div>
+								
+								{formData.date && (
+									<div className={styles.formGroup}>
+										<label className={styles.formLabel}>Available Slots for {getDayOfWeek(formData.date)}</label>
+										<div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
+											{filteredSlots.length > 0 ? (
+												filteredSlots.map((slot) => (
+													<button
+														key={slot._id}
+														type="button"
+														onClick={() => {
+															setFormData({ ...formData, time: slot.startTime });
+															setSelectedSlot(slot._id);
+														}}
+														style={{
+															padding: '8px 16px',
+															borderRadius: '8px',
+															border: '2px solid',
+															borderColor: selectedSlot === slot._id ? 'var(--brand-primary)' : '#e2e8f0',
+															background: selectedSlot === slot._id ? 'var(--brand-primary)' : 'white',
+															color: selectedSlot === slot._id ? 'white' : 'var(--text-main)',
+															cursor: 'pointer',
+															fontWeight: 600,
+															fontSize: '0.85rem',
+															transition: 'all 0.2s'
+														}}
+													>
+														{slot.startTime} - {slot.endTime}
+													</button>
+												))
+											) : (
+												<p style={{ fontSize: '0.85rem', color: '#ef4444', fontWeight: 600 }}>No slots available for this day.</p>
+											)}
+										</div>
 									</div>
-								</div>
-
-								<div className={styles.formGroup}>
-									<label className={styles.formLabel}>Date</label>
-									<input type="date" className={styles.formInput} value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} min={new Date().toISOString().split("T")[0]} required />
-								</div>
-								<div className={styles.formGroup}>
-									<label className={styles.formLabel}>Time</label>
-									<input type="time" className={styles.formInput} value={formData.time} onChange={(e) => setFormData({ ...formData, time: e.target.value })} required />
-								</div>
+								)}
 							</div>
+
 							<div className={styles.formGroup}>
 								<label className={styles.formLabel}>Reason (Optional)</label>
-								<textarea className={styles.formTextarea} value={formData.reason} onChange={(e) => setFormData({ ...formData, reason: e.target.value })} placeholder="Briefly describe your reason for the visit..." />
+								<textarea className={styles.formTextarea} value={formData.reason} onChange={(e) => setFormData({ ...formData, reason: e.target.value })} placeholder="Reason for visit..." />
 							</div>
+
+							<div className={styles.formGroup}>
+								<label className={styles.formLabel}>Payment Preference</label>
+								<div style={{ display: "flex", gap: "20px", marginTop: "8px" }}>
+									<label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+										<input type="radio" name="paymentMode" value="prepaid" checked={formData.paymentMode === "prepaid"} onChange={(e) => setFormData({ ...formData, paymentMode: e.target.value })} />
+										Pay Now (Prepaid)
+									</label>
+									<label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+										<input type="radio" name="paymentMode" value="pay_later" checked={formData.paymentMode === "pay_later"} onChange={(e) => setFormData({ ...formData, paymentMode: e.target.value })} />
+										Pay Later
+									</label>
+								</div>
+							</div>
+
 							<div className={styles.modalActions}>
-								<button type="submit" className={styles.btnSubmit} disabled={booking}>
-									{booking ? "Booking..." : selectedDoctor?.consultationFee ? `Book — ₹${selectedDoctor.consultationFee}` : "Book Appointment"}
+								<button type="submit" className={styles.btnSubmit} disabled={booking || (formData.date && filteredSlots.length === 0)}>
+									{booking ? "Processing..." : formData.paymentMode === 'prepaid' ? "Pay & Confirm" : "Confirm Booking"}
 								</button>
 								<button type="button" className={styles.btnClose} onClick={() => setShowBookModal(false)}>Cancel</button>
 							</div>
@@ -423,12 +480,11 @@ const PatientAppointments = () => {
 				</div>
 			)}
 
-			{/* ======== Reschedule Modal ======== */}
+			{/* Reschedule Modal */}
 			{showRescheduleModal && rescheduleTarget && (
 				<div className={styles.modalOverlay} onClick={() => setShowRescheduleModal(false)}>
 					<div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-						<h2 className={styles.modalTitle}>Reschedule Appointment</h2>
-						<p className={styles.modalSubtitle}>Choose a new date and time for your appointment with {getDoctorName(rescheduleTarget)}.</p>
+						<h2 className={styles.modalTitle}>Reschedule</h2>
 						<form onSubmit={handleReschedule}>
 							<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
 								<div className={styles.formGroup}>
@@ -441,59 +497,94 @@ const PatientAppointments = () => {
 								</div>
 							</div>
 							<div className={styles.modalActions}>
-								<button type="submit" className={styles.btnSubmit} disabled={rescheduling}>
-									{rescheduling ? "Rescheduling..." : "Confirm Reschedule"}
-								</button>
+								<button type="submit" className={styles.btnSubmit} disabled={rescheduling}>Confirm</button>
 								<button type="button" className={styles.btnClose} onClick={() => setShowRescheduleModal(false)}>Cancel</button>
 							</div>
 						</form>
 					</div>
 				</div>
 			)}
+
 			{/* Review Modal */}
 			{showReviewModal && reviewTarget && (
-				<div className={styles.modalOverlay}>
-					<div className={styles.modalContent}>
-						<button className={styles.modalClose} onClick={() => setShowReviewModal(false)}>
-							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-						</button>
-						<h2 className={styles.modalTitle}>Rate Your Experience</h2>
-						<p className={styles.modalSubtitle}>How was your appointment with {getDoctorName(reviewTarget)}?</p>
-						
-						<form onSubmit={handleReviewSubmit} className={styles.form}>
+				<div className={styles.modalOverlay} onClick={() => setShowReviewModal(false)}>
+					<div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+						<h2 className={styles.modalTitle}>Review</h2>
+						<form onSubmit={handleReviewSubmit}>
 							<div className={styles.formGroup}>
-								<label className={styles.label}>Rating (1-5)</label>
-								<div style={{ display: "flex", gap: "10px", fontSize: "2rem", cursor: "pointer", justifyContent: "center", marginBottom: "20px" }}>
+								<label className={styles.label}>Rating</label>
+								<div className={styles.starRating}>
 									{[1, 2, 3, 4, 5].map((star) => (
-										<span 
-											key={star} 
+										<button
+											key={star}
+											type="button"
+											className={`${styles.starBtn} ${reviewData.rating >= star ? styles.starBtnActive : ""}`}
 											onClick={() => setReviewData({ ...reviewData, rating: star })}
-											style={{ color: star <= reviewData.rating ? "#f59e0b" : "#e2e8f0" }}
 										>
-											★
-										</span>
+											<svg width="24" height="24" viewBox="0 0 24 24" fill={reviewData.rating >= star ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+												<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+											</svg>
+										</button>
 									))}
 								</div>
 							</div>
-							
 							<div className={styles.formGroup}>
-								<label className={styles.label}>Feedback (Optional)</label>
-								<textarea 
-									className={styles.input} 
-									rows="4"
-									value={reviewData.comment}
-									onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })}
-									placeholder="Tell us about your experience..."
-								></textarea>
+								<label className={styles.label}>Comment</label>
+								<textarea value={reviewData.comment} onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })} className={styles.formTextarea} />
 							</div>
-							
 							<div className={styles.modalActions}>
-								<button type="button" className={styles.btnSecondary} onClick={() => setShowReviewModal(false)}>Cancel</button>
-								<button type="submit" className={styles.btnPrimary} disabled={submittingReview}>
-									{submittingReview ? "Submitting..." : "Submit Review"}
-								</button>
+								<button type="submit" className={styles.btnSubmit} disabled={submittingReview}>Submit</button>
+								<button type="button" className={styles.btnClose} onClick={() => setShowReviewModal(false)}>Cancel</button>
 							</div>
 						</form>
+					</div>
+				</div>
+			)}
+
+			{/* Mock Payment Modal */}
+			{showPaymentModal && (
+				<div className={styles.modalOverlay}>
+					<div className={styles.modal} style={{ maxWidth: '400px', textAlign: 'center' }}>
+						<div style={{ marginBottom: '24px' }}>
+							<div style={{ width: '60px', height: '60px', background: '#e0f2fe', color: '#0369a1', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyIn: 'center', margin: '0 auto 16px' }}>
+								<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+							</div>
+							<h2 style={{ margin: 0 }}>Secure Payment</h2>
+							<p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '8px' }}>
+								Completing payment of <strong>₹{selectedDoctor?.consultationFee || 0}</strong> for your appointment.
+							</p>
+						</div>
+
+						<div style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', marginBottom: '24px', textAlign: 'left' }}>
+							<div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '12px' }}>Payment Method</div>
+							<div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+								<div style={{ width: '40px', height: '24px', background: '#1e293b', borderRadius: '4px' }}></div>
+								<div style={{ fontWeight: 600 }}>•••• •••• •••• 4242</div>
+							</div>
+						</div>
+
+						<div className={styles.modalActions} style={{ flexDirection: 'column' }}>
+							<button 
+								onClick={handleMockPayment} 
+								className={styles.btnSubmit} 
+								disabled={paymentProcessing}
+								style={{ width: '100%' }}
+							>
+								{paymentProcessing ? "Processing Transaction..." : "Pay Now"}
+							</button>
+							<button 
+								onClick={() => setShowPaymentModal(false)} 
+								className={styles.btnClose}
+								style={{ width: '100%' }}
+							>
+								Cancel
+							</button>
+						</div>
+						
+						<div style={{ marginTop: '20px', fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+							Secured by MediSync Pay
+						</div>
 					</div>
 				</div>
 			)}

@@ -1,12 +1,14 @@
 const Appointment = require('../models/appointment.model');
 const Doctor = require('../models/doctor.model');
 const Patient = require('../models/patient.model');
+const Payment = require('../models/payment.model');
 const { createNotification } = require('../services/notification.service');
+const crypto = require('crypto');
 
 // Book appointment (patient)
 exports.bookAppointment = async (req, res) => {
   try {
-    const { doctorId, date, time, reason } = req.body;
+    const { doctorId, date, time, reason, paymentMode } = req.body;
 
     if (!date || !time) {
       return res.status(400).json({ message: 'Date and time are required' });
@@ -75,7 +77,25 @@ exports.bookAppointment = async (req, res) => {
       time,
       reason: reason || '',
       consultationFee,
+      paymentMode: paymentMode || 'prepaid',
     });
+
+    // Create a transaction record if prepaid
+    if (paymentMode === 'prepaid') {
+      await Payment.create({
+        patient: patientProfile._id,
+        doctor: doctorId,
+        appointment: appointment._id,
+        doctorName: doctorProfile.user?.name || 'Doctor',
+        specialty: doctorProfile.specialization || 'General',
+        amount: consultationFee,
+        method: 'card',
+        status: 'paid',
+        referenceId: `TXN-${crypto.randomBytes(4).toString('hex').toUpperCase()}`,
+        paidAt: new Date(),
+        notes: `Appointment booking on ${date} at ${time}`
+      });
+    }
 
     const populated = await Appointment.findById(appointment._id)
       .populate({

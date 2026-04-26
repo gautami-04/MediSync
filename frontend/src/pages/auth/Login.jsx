@@ -57,7 +57,7 @@ const Login = () => {
 						name="email" 
 						value={form.email} 
 						onChange={handleChange} 
-						placeholder="admin1234@gmail.com" 
+						placeholder="Enter your Email Address" 
 						error={errors.email} 
 						required 
 					/>
@@ -70,7 +70,7 @@ const Login = () => {
 							type="password" 
 							value={form.password} 
 							onChange={handleChange} 
-							placeholder="one23four" 
+							placeholder="Enter your Password" 
 							error={errors.password} 
 							required 
 						/>

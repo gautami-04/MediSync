@@ -2,6 +2,14 @@ require('dotenv').config(); // 🔥 MUST BE FIRST
 
 const app = require('./app');
 const connectDB = require('./config/db');
+const fs = require('fs');
+const path = require('path');
+
+// Ensure uploads directory exists
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 connectDB();
 

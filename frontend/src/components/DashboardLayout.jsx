@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import { useToast } from "./ToastContext";
 import { getDoctorAppointments, getMyAppointments } from "../services/appointment.service";
+import api from "../services/api";
 import styles from "./DashboardLayout.module.css";
 import { 
   FiHome, 
@@ -18,7 +19,9 @@ import {
   FiUsers,
   FiStar,
   FiClock,
-  FiUser
+  FiUser,
+  FiMenu,
+  FiX
 } from 'react-icons/fi';
 
 const DashboardLayout = ({ children }) => {
@@ -28,6 +31,8 @@ const DashboardLayout = ({ children }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { addToast } = useToast();
   
   const currentPath = location.pathname;
@@ -36,28 +41,21 @@ const DashboardLayout = ({ children }) => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        let data = [];
-        if (role === 'doctor') {
-          const res = await getDoctorAppointments();
-          data = res.appointments || res.data || res || [];
-        } else {
-          const res = await getMyAppointments();
-          data = res.appointments || res.data || res || [];
-        }
-        
-        const latest = Array.isArray(data) ? data
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-          .slice(0, 5) : [];
-        setNotifications(latest);
+        const res = await api.get('/api/notifications/my?limit=5');
+        const notifs = res.data?.notifications || [];
+        setNotifications(notifs);
+        setUnreadCount(notifs.filter(n => !n.isRead).length);
       } catch (err) {
         console.error("Failed to fetch notifications:", err);
       }
     };
 
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
-    return () => clearInterval(interval);
-  }, [role]);
+    if (user && role !== 'admin') {
+      fetchNotifications();
+      const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
+      return () => clearInterval(interval);
+    }
+  }, [role, user]);
 
   const patientNav = [
     { path: '/dashboard', label: 'Dashboard', icon: <FiHome /> },
@@ -110,18 +108,20 @@ const DashboardLayout = ({ children }) => {
   };
 
   return (
-    <div className={styles.layout}>
-      <aside className={styles.sidebar}>
+    <div className={`${styles.layout} ${isSidebarOpen ? styles.sidebarOpen : ""}`}>
+      {isSidebarOpen && <div className={styles.overlay} onClick={() => setIsSidebarOpen(false)} />}
+      
+      <aside className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarActive : ""}`}>
         <Link to="/dashboard" className={styles.brand}>
           <div className={styles.brandIcon}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-              <path d="M19 3H5C3.89 3 3 3.9 3 5V19C3 20.1 3.89 21 5 21H19C20.11 21 21 20.1 21 19V5C21 3.9 20.11 3 19 3ZM17 13H13V17H11V13H7V11H11V7H13V11H17V13Z" />
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
             </svg>
           </div>
-          <div>
+          <div className={styles.brandInfo}>
             <div className={styles.brandName}>MediSync</div>
             <div className={styles.brandTag}>
-              {role === "admin" ? "Admin Portal" : role === "doctor" ? "Doctor Portal" : "Patient Portal"}
+              {role === "admin" ? "Admin Panel" : role === "doctor" ? "Doctor Portal" : "Patient Portal"}
             </div>
           </div>
         </Link>
@@ -132,6 +132,7 @@ const DashboardLayout = ({ children }) => {
               key={item.path}
               to={item.path} 
               className={`${styles.navItem} ${currentPath.startsWith(item.path) ? styles.navItemActive : ""}`}
+              onClick={() => setIsSidebarOpen(false)}
             >
               {item.icon}
               <span>{item.label}</span>
@@ -149,51 +150,69 @@ const DashboardLayout = ({ children }) => {
 
       <main className={styles.main}>
         <header className={styles.topBar}>
-          <div className={styles.searchContainer}>
-            <FiSearch style={{color: 'var(--text-muted)'}} />
-            <input 
-              type="text" 
-              placeholder={role === "admin" ? "Search records..." : "Search..."} 
-              readOnly
-              style={{ cursor: 'default' }}
-            />
-          </div>
+          <button className={styles.menuToggle} onClick={() => setIsSidebarOpen(true)}>
+            <FiMenu />
+          </button>
+          <div style={{ flex: 1 }}></div>
           
           <div className={styles.topBarActions}>
             <div className={styles.dropdownContainer}>
               <button className={styles.actionIconBtn} title="Notifications" onClick={handleNotificationClick}>
                 <FiBell />
-                <div className={styles.notificationBadge}></div>
+                {unreadCount > 0 && <div className={styles.notificationBadge}>{unreadCount}</div>}
               </button>
               {showNotifications && (
                 <div className={styles.dropdownBox}>
-                  <div className={styles.dropdownTitle}>Clinical Alerts</div>
+                  <div className={styles.dropdownTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    Clinical Alerts
+                    {unreadCount > 0 && (
+                      <button 
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            await api.put('/api/notifications/all/read');
+                            setUnreadCount(0);
+                            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+                            addToast('All notifications marked as read', 'success');
+                          } catch (err) {
+                            addToast("Failed to update notifications", "error");
+                          }
+                        }}
+                        style={{ background: 'none', border: 'none', color: 'var(--brand-primary)', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        Mark all as read
+                      </button>
+                    )}
+                  </div>
                   <div className={styles.dropdownContent} style={{ maxHeight: '300px', overflowY: 'auto', padding: '0' }}>
                     {notifications.length > 0 ? notifications.map(n => (
                       <div 
                         key={n._id} 
                         className={styles.notificationItem}
-                        onClick={() => {
-                          const target = user?.role === 'doctor' ? '/doctor/appointments' : '/appointment-history';
-                          navigate(target);
-                          setShowNotifications(false);
-                          addToast(`Opening appointment status`, 'info');
+                        style={{ background: n.isRead ? 'transparent' : '#f0fdf4', borderBottom: '1px solid #e2e8f0', padding: '12px 16px', cursor: 'pointer' }}
+                        onClick={async () => {
+                          try {
+                            await api.put(`/api/notifications/${n._id}/read`);
+                            const notifPath = role === 'doctor' ? '/doctor/notifications' : '/notifications';
+                            navigate(notifPath);
+                            setShowNotifications(false);
+                          } catch (err) {
+                            addToast("Failed to update notification", "error");
+                          }
                         }}
                       >
-                        <div className={styles.notifTitle}>
-                          {user?.role === 'doctor' 
-                            ? (n.patient?.user?.name || 'Patient') 
-                            : (n.doctor?.user?.name || 'Doctor')}
+                        <div className={styles.notifTitle} style={{ fontWeight: 700, fontSize: '0.85rem' }}>
+                          {n.title}
                         </div>
-                        <div className={styles.notifDesc}>{n.date} at {n.time}</div>
-                        <div className={styles.notifStatus}>{n.status.toUpperCase()}</div>
+                        <div className={styles.notifDesc} style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>{n.message}</div>
+                        <div className={styles.notifStatus} style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '6px' }}>{new Date(n.createdAt).toLocaleString()}</div>
                       </div>
                     )) : (
-                      <div style={{ padding: '20px', textAlign: 'center' }}>No recent appointments.</div>
+                      <div style={{ padding: '20px', textAlign: 'center' }}>No recent notifications.</div>
                     )}
                     <button 
                       onClick={() => { 
-                        const notifPath = user?.role === 'doctor' ? '/doctor/notifications' : '/appointment-history';
+                        const notifPath = role === 'doctor' ? '/doctor/notifications' : '/notifications';
                         navigate(notifPath); 
                         setShowNotifications(false); 
                       }} 
@@ -214,7 +233,7 @@ const DashboardLayout = ({ children }) => {
                 <div className={styles.dropdownBox}>
                   <div className={styles.dropdownTitle}>Help & Support</div>
                   <div className={styles.dropdownContent}>
-                    Contact for more.....
+                    Contact for more medisyncg6@gmail.com
                   </div>
                 </div>
               )}

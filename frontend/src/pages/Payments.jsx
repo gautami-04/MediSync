@@ -1,6 +1,7 @@
 import styles from "./Payments.module.css";
 import { useEffect, useMemo, useState } from "react";
 import { getMyPayments } from "../services/payment.service";
+import api from "../services/api";
 import Pagination from "../components/Pagination";
 import { useToast } from "../components/ToastContext";
 import useAuth from "../hooks/useAuth";
@@ -163,12 +164,19 @@ const Payments = () => {
 	const { addToast } = useToast();
 	const { user } = useAuth();
 	const [error, setError] = useState("");
+	const [searchTerm, setSearchTerm] = useState("");
 
 	const loadPayments = async () => {
 		setLoading(true);
 		setError("");
 		try {
-			const data = await getMyPayments();
+			let data;
+			if (user?.role === "admin") {
+				const res = await api.get("/api/admin/payments");
+				data = res.data;
+			} else {
+				data = await getMyPayments();
+			}
 			setPayments(Array.isArray(data) ? data : []);
 		} catch (requestError) {
 			const msg = requestError?.response?.data?.message || requestError?.message || "Failed to fetch payments.";
@@ -199,7 +207,21 @@ const Payments = () => {
 		};
 	}, [payments]);
 
+	const filteredPayments = useMemo(() => {
+		if (!searchTerm.trim()) return payments;
+		const term = searchTerm.toLowerCase();
+		return payments.filter(p => 
+			(p.patient?.user?.name || "").toLowerCase().includes(term) ||
+			(p.doctorName || "").toLowerCase().includes(term) ||
+			(p._id || "").toLowerCase().includes(term) ||
+			(p.referenceId || "").toLowerCase().includes(term) ||
+			(p.notes || "").toLowerCase().includes(term) ||
+			String(p.amount).includes(term)
+		);
+	}, [payments, searchTerm]);
+
 	const isDoctor = user?.role === "doctor";
+	const isAdmin = user?.role === "admin";
 
 	return (
 		<>
@@ -216,15 +238,32 @@ const Payments = () => {
 					<h1 className={styles.headerTitle}>Payment History</h1>
 					<p className={styles.headerSubtitle}>Manage your clinical billing and transaction records.</p>
 				</div>
-				<button className={styles.btnPrimary} onClick={loadPayments}>
-					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-					Refresh Data
-				</button>
+				<div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+					<input 
+						type="text" 
+						placeholder="Search transactions..." 
+						className={styles.searchInput}
+						value={searchTerm}
+						onChange={(e) => setSearchTerm(e.target.value)}
+						style={{
+							padding: "10px 16px",
+							borderRadius: "12px",
+							border: "1px solid var(--border-color)",
+							fontSize: "0.9rem",
+							width: "260px",
+							outline: "none"
+						}}
+					/>
+					<button className={styles.btnPrimary} onClick={loadPayments}>
+						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+						Refresh Data
+					</button>
+				</div>
 			</div>
 
 			<div className={styles.summaryGrid}>
 				<div className={styles.summaryCard}>
-					<div className={styles.summaryLabel}>{isDoctor ? "TOTAL EARNINGS" : "TOTAL SPENT"}</div>
+					<div className={styles.summaryLabel}>{isAdmin ? "SYSTEM REVENUE" : isDoctor ? "TOTAL EARNINGS" : "TOTAL SPENT"}</div>
 					<div className={styles.summaryValue}>{formatCurrency(summary.totalValue)}</div>
 
 					<div className={styles.iconWrapper}>
@@ -267,14 +306,14 @@ const Payments = () => {
 								<td colSpan="6" style={{ textAlign: "center", padding: "24px" }}>Loading payments...</td>
 							</tr>
 						) : null}
-						{!loading && payments.length === 0 ? (
+						{!loading && filteredPayments.length === 0 ? (
 							<tr>
 								<td colSpan="6" style={{ textAlign: "center", padding: "24px", color: "var(--text-secondary)" }}>
-									No transactions found yet.
+									No transactions found matching your search.
 								</td>
 							</tr>
 						) : null}
-						{payments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((payment) => (
+						{filteredPayments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((payment) => (
 							<tr key={payment._id}>
 								<td>
 									<div className={styles.dateCell}>{formatDate(payment.paidAt || payment.createdAt)}</div>
@@ -327,11 +366,11 @@ const Payments = () => {
 
 				<div className={styles.tableFooter}>
 					<div style={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>
-						Showing {payments.length} transaction{payments.length === 1 ? "" : "s"}
+						Showing {filteredPayments.length} transaction{filteredPayments.length === 1 ? "" : "s"}
 					</div>
 					<Pagination
 						currentPage={currentPage}
-						totalPages={Math.ceil(payments.length / itemsPerPage)}
+						totalPages={Math.ceil(filteredPayments.length / itemsPerPage)}
 						onPageChange={setCurrentPage}
 					/>
 				</div>

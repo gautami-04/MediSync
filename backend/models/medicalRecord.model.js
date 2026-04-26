@@ -14,7 +14,7 @@ const medicalRecordSchema = new mongoose.Schema(
 	{
 		patient: {
 			type: mongoose.Schema.Types.ObjectId,
-			ref: 'User',
+			ref: 'Patient',
 			required: true,
 			index: true,
 		},
@@ -38,6 +38,13 @@ const medicalRecordSchema = new mongoose.Schema(
 	},
 	{ timestamps: true }
 );
+
+medicalRecordSchema.virtual('fileUrl').get(function() {
+  return this.attachments && this.attachments.length > 0 ? this.attachments[0] : null;
+});
+
+medicalRecordSchema.set('toJSON', { virtuals: true });
+medicalRecordSchema.set('toObject', { virtuals: true });
 
 medicalRecordSchema.index({ patient: 1, createdAt: -1 });
 

@@ -1,7 +1,7 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 32px;
 }
 
 .header {
@@ -9,180 +9,167 @@
 }
 
 .headerTitle {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 4px;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.5px;
 }
 
 .headerSubtitle {
-  color: var(--text-secondary);
-  font-size: 0.95rem;
+  color: var(--text-muted);
+  font-size: 1rem;
+  margin-top: 4px;
 }
 
 .statsGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
 }
 
 .statCard {
-  background: white;
-  border-radius: 16px;
-  padding: 24px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 32px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  transition: var(--transition-all);
+}
+
+.statCard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary);
+}
+
+.clickable {
+  cursor: pointer;
 }
 
 .statHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .statIconWrap {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-1);
-  color: var(--brand-primary);
+  background: var(--primary-light);
+  color: var(--primary);
 }
 
 .statBadge {
   font-size: 0.7rem;
-  font-weight: 700;
-  padding: 4px 8px;
-  border-radius: 99px;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.5px;
 }
 
-.badgeNew {
-  background: #21674e;
-  color: white;
-}
-
-.badgeTotal {
-  background: #dcf1e7;
-  color: #21674e;
-}
-
-.badgeMonthly {
-  background: #fdf5e6;
-  color: #a4762c;
-}
-
-.badgeAction {
-  background: #c73636;
-  color: white;
-}
+.badgeNew { background: #064e3b; color: #ecfdf5; }
+.badgeTotal { background: #f1f5f9; color: #475569; }
+.badgeMonthly { background: #fef3c7; color: #92400e; }
 
 .statTitle {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #9ab4a8;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
 }
 
 .statValue {
-  font-size: 2rem;
+  font-size: 2.2rem;
   font-weight: 800;
-  color: var(--text-primary);
+  color: var(--text-main);
 }
 
 .chartsGrid {
   display: grid;
-  grid-template-columns: 1fr 1.5fr;
-  gap: 20px;
+  grid-template-columns: 1fr;
+  gap: 24px;
 }
 
 .chartCard {
-  background: white;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
 }
 
 .chartHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
 
 .chartTitle {
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-main);
 }
 
 .chartLink {
-  color: var(--brand-primary);
-  font-weight: 600;
-  font-size: 0.85rem;
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 0.9rem;
   text-decoration: none;
+  padding: 8px 16px;
+  background: var(--primary-light);
+  border-radius: var(--radius-md);
+  transition: var(--transition-all);
+}
+
+.chartLink:hover {
+  background: var(--primary);
+  color: white;
 }
 
 .scheduleList {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .scheduleItem {
   display: flex;
-  gap: 16px;
-  align-items: flex-start;
-  position: relative;
+  gap: 20px;
+  align-items: center;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  transition: var(--transition-all);
 }
 
-.scheduleTimeline {
-  position: absolute;
-  left: 3px;
-  top: 16px;
-  bottom: -20px;
-  width: 2px;
-  background: var(--bg-1);
-  z-index: 0;
-}
-
-.scheduleItem:last-child .scheduleTimeline {
-  display: none;
-}
-
-.scheduleDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--brand-primary);
-  margin-top: 6px;
-  z-index: 1;
-  position: relative;
-  box-shadow: 0 0 0 4px white;
-}
-
-.dotPending {
-  background: #d8b64b;
-}
-
-.dotBreak {
-  background: #cbd5e1;
-}
-
-.dotArrived {
-  background: #4ade80;
+.scheduleItem:hover {
+  background: white;
+  border-color: var(--primary);
+  box-shadow: var(--shadow-sm);
+  transform: scale(1.01);
 }
 
 .scheduleTime {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  width: 60px;
-  margin-top: 2px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--primary);
+  width: 80px;
+  padding: 4px 8px;
+  background: white;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  border: 1px solid var(--primary-light);
 }
 
 .scheduleContent {
@@ -191,126 +178,200 @@
 
 .schedulePatient {
   font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 4px;
+  color: var(--text-main);
+  font-size: 1rem;
 }
 
 .scheduleDesc {
   font-size: 0.85rem;
-  color: #9ab4a8;
+  color: var(--text-muted);
+  margin-top: 2px;
 }
 
 .scheduleStatus {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 800;
-  padding: 4px 8px;
-  border-radius: 99px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
   text-transform: uppercase;
 }
 
-.statusConfirmed {
-  background: #d1f2e4;
-  color: #1b6348;
-}
-
-.statusArrived {
-  background: #e2e8f0;
-  color: #475569;
-}
-
-.statusPending {
-  background: #112820;
-  color: white;
-}
-
-.statusBreak {
-  background: #f1f5f9;
-  color: #64748b;
-}
+.statusConfirmed { background: #dcfce7; color: #166534; }
+.statusPending { background: #fef9c3; color: #854d0e; }
 
 .recentPatientsCard {
-  background: white;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
 }
 
 .table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0 8px;
 }
 
 .table th {
   text-align: left;
-  padding: 12px 0;
-  font-size: 0.75rem;
+  padding: 12px 16px;
+  font-size: 0.8rem;
   text-transform: uppercase;
-  color: #9ab4a8;
-  font-weight: 700;
-  border-bottom: 1px solid #f1f5f9;
+  color: var(--text-muted);
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.table tr {
+  background: white;
 }
 
 .table td {
-  padding: 16px 0;
+  padding: 20px 16px;
   border-bottom: 1px solid #f1f5f9;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 .patientCell {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .patientAvatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
   object-fit: cover;
+  border: 2px solid white;
+  box-shadow: var(--shadow-sm);
 }
 
 .patientName {
-  font-weight: 700;
-  color: var(--text-primary);
+  font-weight: 800;
+  color: var(--text-main);
 }
 
 .patientId {
-  font-size: 0.75rem;
-  color: #9ab4a8;
-}
-
-.diagnosisBadge {
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 99px;
-  display: inline-block;
-  background: #dcf1e7;
-  color: #1b6348;
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }
 
 .statusIndicator {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-weight: 600;
-  font-size: 0.85rem;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-main);
 }
 
 .statusDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 0 4px var(--primary-light);
 }
 
-.dotStable { background: #1b6348; }
-.dotMonitoring { background: #d8b64b; }
-.dotCritical { background: #c73636; }
+.dotStable { background: var(--primary); }
 
 .actionBtn {
-  color: var(--brand-primary);
+  color: var(--primary);
+  background: var(--primary-light);
+  border: none;
+  font-weight: 800;
+  padding: 8px 20px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition-all);
+}
+
+.actionBtn:hover {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2);
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+}
+
+.patientModal {
+  background: white;
+  width: 100%;
+  max-width: 450px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  animation: modalSlideUp 0.3s ease-out;
+}
+
+.modalHeader {
+  padding: 24px;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modalHeader h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.closeBtn {
   background: none;
   border: none;
-  font-weight: 700;
+  color: white;
+  font-size: 1.5rem;
   cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.closeBtn:hover {
+  opacity: 1;
+}
+
+.modalBody {
+  padding: 32px;
+}
+
+.patientBriefInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.95rem;
+}
+
+.infoRow strong {
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }

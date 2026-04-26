@@ -110,7 +110,7 @@ const DoctorAppointments = () => {
 	];
 
 	return (
-		<DashboardLayout activePath="/appointments">
+		<>
 			<div className={styles.header}>
 				<div>
 					<h1 className={styles.headerTitle}>My Schedule</h1>
@@ -206,7 +206,7 @@ const DoctorAppointments = () => {
 					</div>
 				</div>
 			)}
-		</DashboardLayout>
+		</>
 	);
 };
 

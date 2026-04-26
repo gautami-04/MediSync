@@ -4,11 +4,8 @@ const EMAIL_USER = process.env.EMAIL_USER || 'medisyncg6@gmail.com';
 const EMAIL_PASS = process.env.EMAIL_PASS;
 const NORMALIZED_EMAIL_PASS = String(EMAIL_PASS || '').replace(/\s+/g, '');
 const SMTP_TIMEOUT_MS = Number(process.env.OTP_SMTP_TIMEOUT_MS || 8000);
-const ALLOW_DEV_OTP_FALLBACK =
-	process.env.EMAIL_OTP_DEV_FALLBACK === 'true' ||
-	(process.env.EMAIL_OTP_DEV_FALLBACK !== 'false' && process.env.NODE_ENV !== 'production');
-const SKIP_EMAIL_SEND_IN_DEV =
-	process.env.OTP_SKIP_EMAIL_IN_DEV === 'true' && process.env.NODE_ENV !== 'production';
+const ALLOW_DEV_OTP_FALLBACK = process.env.EMAIL_OTP_DEV_FALLBACK === 'true' || process.env.NODE_ENV !== 'production';
+const SKIP_EMAIL_SEND_IN_DEV = process.env.OTP_SKIP_EMAIL_IN_DEV === 'true';
 
 const transporter = nodemailer.createTransport({
 	service: 'gmail',

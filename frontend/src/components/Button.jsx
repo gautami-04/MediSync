@@ -7,6 +7,8 @@ const Button = ({
   disabled = false,
   variant = "primary",
   onClick,
+  style = {},
+  className = ""
 }) => {
   const isDisabled = disabled || loading;
 
@@ -14,9 +16,10 @@ const Button = ({
     <button
       type={type}
       disabled={isDisabled}
+      style={style}
       className={`${styles.button} ${styles[variant] || styles.primary} ${
         isDisabled ? styles.disabled : ""
-      }`}
+      } ${className}`}
       onClick={onClick}
     >
       {loading ? (

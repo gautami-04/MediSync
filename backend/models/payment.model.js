@@ -8,6 +8,11 @@ const paymentSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    doctor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Doctor',
+      index: true,
+    },
     appointment: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Appointment',

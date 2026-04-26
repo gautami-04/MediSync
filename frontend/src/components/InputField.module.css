@@ -9,79 +9,38 @@
 }
 
 .label {
-  color: var(--text-secondary);
-  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.required {
-  color: #d14343;
-  margin-left: 4px;
 }
 
 .input {
   width: 100%;
-  border: 1px solid transparent;
-  border-radius: 999px; /* pill shape */
-  background: var(--input-bg);
-  padding: 16px 20px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: #f8fafc;
+  padding: 14px 18px;
   font-size: 1rem;
-  color: var(--text-primary);
-  transition: all 0.25s ease;
-}
-
-.input::placeholder {
-  color: #9ab4a8;
-}
-
-.inputWithButton {
-  padding-right: 76px;
+  color: var(--text-main);
+  transition: var(--transition-all);
 }
 
 .input:focus {
   outline: none;
-  border-color: var(--brand-primary);
+  border-color: var(--primary);
   background: #ffffff;
-  box-shadow: 0 0 0 4px rgba(33, 103, 78, 0.1);
+  box-shadow: 0 0 0 4px var(--primary-light);
 }
 
 .errorInput {
-  border-color: #d84b4b;
-  background: #fdf5f5;
-  box-shadow: 0 0 0 4px rgba(216, 75, 75, 0.14);
-}
-
-.trailingButton {
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  border: none;
-  background: transparent;
-  color: var(--brand-primary);
-  padding: 6px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.trailingButton:hover {
-  text-decoration: underline;
-}
-
-.helperText {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 0.82rem;
+  border-color: #ef4444;
+  background: #fef2f2;
 }
 
 .errorText {
-  margin: 0;
-  color: #be2e2e;
+  color: #ef4444;
   font-size: 0.85rem;
+  font-weight: 600;
 }

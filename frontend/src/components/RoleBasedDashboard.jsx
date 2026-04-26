@@ -2,8 +2,7 @@ import React from 'react';
 import useAuth from '../hooks/useAuth';
 import PatientDashboard from '../pages/patient/Dashboard';
 import AdminDashboard from '../pages/admin/Dashboard';
-// Import DoctorDashboard when Gautami is ready, using a stub for now
-const DoctorDashboardStub = () => <div className="p-10"><h1>Doctor Dashboard</h1><p>Gautami is working on this!</p></div>;
+import DoctorDashboard from '../pages/doctor/Dashboard';
 
 const RoleBasedDashboard = () => {
   const { user } = useAuth();
@@ -14,7 +13,7 @@ const RoleBasedDashboard = () => {
     case 'admin':
       return <AdminDashboard />;
     case 'doctor':
-      return <DoctorDashboardStub />;
+      return <DoctorDashboard />;
     case 'patient':
     default:
       return <PatientDashboard />;

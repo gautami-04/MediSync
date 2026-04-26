@@ -19,8 +19,17 @@ const formatDate = (value) => {
 	return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
 };
 
+import { useLocation } from "react-router-dom";
+import Pagination from "../../components/Pagination";
+
 const PatientAppointments = () => {
+	const location = useLocation();
 	const [appointments, setAppointments] = useState([]);
+	const [totalCount, setTotalCount] = useState(0);
+	const [stats, setStats] = useState({ total: 0, upcoming: 0, completed: 0, cancelled: 0 });
+	const [currentPage, setCurrentPage] = useState(1);
+	const itemsPerPage = 10;
+	
 	const [doctors, setDoctors] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
@@ -31,8 +40,39 @@ const PatientAppointments = () => {
 	const [rescheduleTarget, setRescheduleTarget] = useState(null);
 	const [booking, setBooking] = useState(false);
 	const [rescheduling, setRescheduling] = useState(false);
+	const [showReviewModal, setShowReviewModal] = useState(false);
+	const [reviewTarget, setReviewTarget] = useState(null);
+	const [reviewData, setReviewData] = useState({ rating: 5, comment: "" });
+	const [submittingReview, setSubmittingReview] = useState(false);
 	const [formData, setFormData] = useState({ doctorId: "", date: "", time: "", reason: "" });
 	const [rescheduleData, setRescheduleData] = useState({ date: "", time: "" });
+
+	// Auto-open modal if navigating from doctor search
+	useEffect(() => {
+		if (location.state?.doctorId) {
+			setFormData(prev => ({ ...prev, doctorId: location.state.doctorId }));
+			setShowBookModal(true);
+		}
+	}, [location.state]);
+
+	const loadAppointments = useCallback(async () => {
+		setLoading(true);
+		setError("");
+		try {
+			const data = await getMyAppointments({ 
+				page: currentPage, 
+				limit: itemsPerPage,
+				status: filter === 'all' ? undefined : filter
+			});
+			setAppointments(data.appointments || []);
+			setTotalCount(data.total || 0);
+			setStats(data.stats || { total: 0, upcoming: 0, completed: 0, cancelled: 0 });
+		} catch (err) {
+			setError(err?.response?.data?.message || "Failed to load appointments.");
+		} finally {
+			setLoading(false);
+		}
+	}, [currentPage, filter]);
 
 	// Auto-dismiss messages after 4 seconds
 	useEffect(() => {
@@ -41,20 +81,6 @@ const PatientAppointments = () => {
 	useEffect(() => {
 		if (success) { const t = setTimeout(() => setSuccess(""), 4000); return () => clearTimeout(t); }
 	}, [success]);
-
-	const loadAppointments = useCallback(async () => {
-		setLoading(true);
-		setError("");
-		try {
-			const data = await getMyAppointments();
-			setAppointments(Array.isArray(data) ? data : []);
-		} catch (err) {
-			setError(err?.response?.data?.message || "Failed to load appointments.");
-			setAppointments([]);
-		} finally {
-			setLoading(false);
-		}
-	}, []);
 
 	const loadDoctors = useCallback(async () => {
 		try {
@@ -70,21 +96,7 @@ const PatientAppointments = () => {
 		loadDoctors();
 	}, [loadAppointments, loadDoctors]);
 
-	// Stats
-	const stats = useMemo(() => ({
-		total: appointments.length,
-		upcoming: appointments.filter((a) => a.status === "booked" || a.status === "confirmed" || a.status === "rescheduled").length,
-		completed: appointments.filter((a) => a.status === "completed").length,
-		cancelled: appointments.filter((a) => a.status === "cancelled").length,
-	}), [appointments]);
-
-	const filteredAppointments = useMemo(() => {
-		if (filter === "all") return appointments;
-		if (filter === "upcoming") return appointments.filter((a) => ["booked", "confirmed", "rescheduled"].includes(a.status));
-		if (filter === "completed") return appointments.filter((a) => a.status === "completed");
-		if (filter === "cancelled") return appointments.filter((a) => a.status === "cancelled");
-		return appointments;
-	}, [appointments, filter]);
+	const filteredAppointments = appointments; // Filtered by backend
 
 	// Selected doctor preview
 	const selectedDoctor = useMemo(() => {
@@ -158,6 +170,25 @@ const PatientAppointments = () => {
 		return appointment?.doctor?.specialization || "General Consultation";
 	};
 
+	const handleReviewSubmit = async (e) => {
+		e.preventDefault();
+		setSubmittingReview(true);
+		try {
+			await api.post("/api/reviews", {
+				doctorId: reviewTarget.doctor?.user?._id || reviewTarget.doctor?.user || reviewTarget.doctor,
+				rating: reviewData.rating,
+				comment: reviewData.comment
+			});
+			addToast("Review submitted successfully", "success");
+			setShowReviewModal(false);
+			setReviewData({ rating: 5, comment: "" });
+		} catch (err) {
+			addToast(err.response?.data?.message || "Failed to submit review", "error");
+		} finally {
+			setSubmittingReview(false);
+		}
+	};
+
 	const filters = [
 		{ key: "all", label: "All", count: stats.total },
 		{ key: "upcoming", label: "Upcoming", count: stats.upcoming },
@@ -168,7 +199,7 @@ const PatientAppointments = () => {
 	const canModify = (status) => ["booked", "confirmed", "rescheduled"].includes(status);
 
 	return (
-		<DashboardLayout activePath="/appointments">
+		<>
 			<div className={styles.header}>
 				<div>
 					<h1 className={styles.headerTitle}>My Appointments</h1>
@@ -253,16 +284,51 @@ const PatientAppointments = () => {
 							<span className={`${styles.statusPill} ${STATUS_CLASS[appt.status] || styles.statusBooked}`}>
 								{appt.status || "booked"}
 							</span>
-							<div className={styles.actionBtns}>
-								{canModify(appt.status) && (
-									<>
-										<button className={styles.btnReschedule} onClick={() => openReschedule(appt)}>Reschedule</button>
-										<button className={styles.btnCancel} onClick={() => handleCancel(appt._id)}>Cancel</button>
-									</>
-								)}
-							</div>
+								<div className={styles.appointmentActions}>
+									{appt.status === "booked" && (
+										<>
+											<button 
+												className={styles.btnSecondary} 
+												onClick={() => {
+													setRescheduleTarget(appt);
+													setRescheduleData({ date: appt.date || "", time: appt.time || "" });
+													setShowRescheduleModal(true);
+												}}
+											>
+												Reschedule
+											</button>
+											<button 
+												className={styles.btnDanger} 
+												onClick={() => handleCancel(appt._id)}
+											>
+												Cancel
+											</button>
+										</>
+									)}
+									{appt.status === "completed" && (
+										<button 
+											className={styles.btnSecondary} 
+											onClick={() => {
+												setReviewTarget(appt);
+												setShowReviewModal(true);
+											}}
+										>
+											Leave Review
+										</button>
+									)}
+								</div>
 						</div>
 					))}
+					
+					{totalCount > itemsPerPage && (
+						<div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center' }}>
+							<Pagination 
+								currentPage={currentPage}
+								totalPages={Math.ceil(totalCount / itemsPerPage)}
+								onPageChange={setCurrentPage}
+							/>
+						</div>
+					)}
 				</div>
 			)}
 
@@ -322,6 +388,17 @@ const PatientAppointments = () => {
 							)}
 
 							<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+								<div style={{ gridColumn: '1 / -1', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '8px' }}>
+									<label className={styles.formLabel} style={{ marginBottom: '8px', display: 'block' }}>Doctor's Available Times</label>
+									<div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+										{selectedDoctor?.availableSlots?.length > 0 ? selectedDoctor.availableSlots.map((slot, i) => (
+											<div key={i} style={{ background: 'white', padding: '6px 12px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+												{slot.day}: {slot.startTime} - {slot.endTime}
+											</div>
+										)) : <span style={{fontSize: '0.8rem', color: 'var(--text-muted)'}}>No slots found.</span>}
+									</div>
+								</div>
+
 								<div className={styles.formGroup}>
 									<label className={styles.formLabel}>Date</label>
 									<input type="date" className={styles.formInput} value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} min={new Date().toISOString().split("T")[0]} required />
@@ -373,7 +450,54 @@ const PatientAppointments = () => {
 					</div>
 				</div>
 			)}
-		</DashboardLayout>
+			{/* Review Modal */}
+			{showReviewModal && reviewTarget && (
+				<div className={styles.modalOverlay}>
+					<div className={styles.modalContent}>
+						<button className={styles.modalClose} onClick={() => setShowReviewModal(false)}>
+							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+						</button>
+						<h2 className={styles.modalTitle}>Rate Your Experience</h2>
+						<p className={styles.modalSubtitle}>How was your appointment with {getDoctorName(reviewTarget)}?</p>
+						
+						<form onSubmit={handleReviewSubmit} className={styles.form}>
+							<div className={styles.formGroup}>
+								<label className={styles.label}>Rating (1-5)</label>
+								<div style={{ display: "flex", gap: "10px", fontSize: "2rem", cursor: "pointer", justifyContent: "center", marginBottom: "20px" }}>
+									{[1, 2, 3, 4, 5].map((star) => (
+										<span 
+											key={star} 
+											onClick={() => setReviewData({ ...reviewData, rating: star })}
+											style={{ color: star <= reviewData.rating ? "#f59e0b" : "#e2e8f0" }}
+										>
+											★
+										</span>
+									))}
+								</div>
+							</div>
+							
+							<div className={styles.formGroup}>
+								<label className={styles.label}>Feedback (Optional)</label>
+								<textarea 
+									className={styles.input} 
+									rows="4"
+									value={reviewData.comment}
+									onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })}
+									placeholder="Tell us about your experience..."
+								></textarea>
+							</div>
+							
+							<div className={styles.modalActions}>
+								<button type="button" className={styles.btnSecondary} onClick={() => setShowReviewModal(false)}>Cancel</button>
+								<button type="submit" className={styles.btnPrimary} disabled={submittingReview}>
+									{submittingReview ? "Submitting..." : "Submit Review"}
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			)}
+		</>
 	);
 };
 

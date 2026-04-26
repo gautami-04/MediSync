@@ -15,5 +15,6 @@ router.put('/doctors/:id/approve', adminController.approveDoctor);
 router.put('/doctors/:id/reject', adminController.rejectDoctor);
 router.get('/appointments', adminController.getAllAppointments);
 router.get('/payment-stats', adminController.getPaymentStats);
+router.delete('/users/:id', adminController.deleteUser);
 
 module.exports = router;

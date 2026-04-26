@@ -337,10 +337,47 @@ const deleteMedicalRecord = async (req, res) => {
 	}
 };
 
+const patientUploadRecord = async (req, res) => {
+	try {
+		if (!req.file) {
+			return res.status(400).json({ message: 'No file uploaded' });
+		}
+
+		const { title, notes } = req.body;
+		if (!title) {
+			return res.status(400).json({ message: 'Title is required for the record' });
+		}
+
+		// Find or create patient profile to store correct patient ID
+		const patient = await Patient.findOneAndUpdate(
+			{ user: req.user._id },
+			{ $setOnInsert: { user: req.user._id } },
+			{ new: true, upsert: true, setDefaultsOnInsert: true }
+		);
+
+		const filePath = `/uploads/${req.file.filename}`;
+		
+		const record = await MedicalRecord.create({
+			patient: patient._id,
+			title,
+			notes: notes || '',
+			attachments: [filePath],
+		});
+
+		res.status(201).json({
+			message: 'Medical record uploaded successfully',
+			record
+		});
+	} catch (error) {
+		res.status(500).json({ message: error.message });
+	}
+};
+
 module.exports = {
 	createMedicalRecord,
 	getMyMedicalRecords,
 	getDoctorPatientRecords,
 	updateMedicalRecord,
 	deleteMedicalRecord,
+	patientUploadRecord,
 };

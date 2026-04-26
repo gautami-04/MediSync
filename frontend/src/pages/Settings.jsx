@@ -1,216 +1,214 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import DashboardLayout from "../components/DashboardLayout";
 import useAuth from "../hooks/useAuth";
-import { getMyProfile } from "../services/user.service";
+import { useToast } from "../components/ToastContext";
+import Button from "../components/Button";
+import InputField from "../components/InputField";
+import api from "../services/api";
 import styles from "./Settings.module.css";
 
 const Settings = () => {
 	const [activeTab, setActiveTab] = useState("Profile");
-	const { user } = useAuth();
-	const [profile, setProfile] = useState(null);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState("");
+	const { user, updateUser } = useAuth();
+	const { addToast } = useToast();
+	const [form, setForm] = useState({
+		fullName: "",
+		email: "",
+		phone: "",
+		dateOfBirth: "",
+		currentPassword: "",
+		newPassword: "",
+		confirmPassword: ""
+	});
+	const [loading, setLoading] = useState(false);
+	const [showOtp, setShowOtp] = useState(false);
+	const [otp, setOtp] = useState("");
+	const [otpContext, setOtpContext] = useState("");
 
 	useEffect(() => {
-		let mounted = true;
+		if (user) {
+			setForm(prev => ({
+				...prev,
+				fullName: user.name || user.fullName || "",
+				email: user.email || "",
+				phone: user.phone || "",
+				dateOfBirth: user.dateOfBirth || ""
+			}));
+		}
+	}, [user]);
 
-		const loadProfile = async () => {
-			setLoading(true);
-			setError("");
-			try {
-				const data = await getMyProfile();
-				if (mounted) {
-					setProfile(data);
-				}
-			} catch (requestError) {
-				if (mounted) {
-					setError(requestError?.response?.data?.message || "Unable to load profile details.");
-				}
-			} finally {
-				if (mounted) {
-					setLoading(false);
-				}
+	const handleChange = (e) => {
+		setForm({ ...form, [e.target.name]: e.target.value });
+	};
+
+	const handleRequestUpdate = async (e) => {
+		e.preventDefault();
+		setLoading(true);
+		try {
+			// Request OTP for profile update
+			await api.post("/api/auth/send-otp", { email: form.email, reason: "update_profile" });
+			setOtpContext("profile");
+			setShowOtp(true);
+			addToast("Verification code sent to your email.", "success");
+		} catch (err) {
+			addToast(err.response?.data?.message || "Failed to initiate update.", "error");
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const handleVerifyAndSave = async () => {
+		setLoading(true);
+		try {
+			if (otpContext === "profile") {
+				await api.put("/api/auth/profile", { ...form, otp });
+				updateUser({ name: form.fullName, phone: form.phone });
+				addToast("Profile updated successfully.", "success");
+			} else if (otpContext === "password") {
+				await api.put("/api/auth/update-password", {
+					currentPassword: form.currentPassword,
+					newPassword: form.newPassword,
+					otp
+				});
+				addToast("Password updated successfully.", "success");
+				setForm({ ...form, currentPassword: "", newPassword: "", confirmPassword: "" });
 			}
-		};
+			setShowOtp(false);
+		} catch (err) {
+			addToast(err.response?.data?.message || "Verification failed.", "error");
+		} finally {
+			setLoading(false);
+		}
+	};
 
-		loadProfile();
+	const handleImageUpload = async (e) => {
+		const file = e.target.files[0];
+		if (!file) return;
+		const formData = new FormData();
+		formData.append("profilePicture", file);
+		
+		try {
+			setLoading(true);
+			const res = await api.post("/api/users/upload-profile-picture", formData, {
+				headers: { "Content-Type": "multipart/form-data" }
+			});
+			updateUser({ profilePicture: res.data.profilePicture });
+			addToast("Profile picture updated successfully.", "success");
+		} catch (err) {
+			addToast(err.response?.data?.message || "Failed to upload image.", "error");
+		} finally {
+			setLoading(false);
+		}
+	};
 
-		return () => {
-			mounted = false;
-		};
-	}, []);
-
-	const displayName = useMemo(() => {
-		return profile?.name || user?.name || "User";
-	}, [profile, user]);
-
-	const displayEmail = useMemo(() => {
-		return profile?.email || user?.email || "";
-	}, [profile, user]);
-	
-	const [alerts, setAlerts] = useState({
-		email: true,
-		sms: false,
-		newsletter: true
-	});
-
-	const toggleAlert = (key) => {
-		setAlerts(prev => ({...prev, [key]: !prev[key]}));
+	const handlePasswordUpdate = async (e) => {
+		e.preventDefault();
+		if (form.newPassword !== form.confirmPassword) {
+			addToast("Passwords do not match.", "error");
+			return;
+		}
+		setLoading(true);
+		try {
+			await api.post("/api/auth/send-otp", { email: form.email, reason: "update_profile" });
+			setOtpContext("password");
+			setShowOtp(true);
+			addToast("Verification code sent to your email.", "success");
+		} catch (err) {
+			addToast(err.response?.data?.message || "Failed to update password.", "error");
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	return (
-		<DashboardLayout activePath="/settings">
-			<div className={styles.header}>
-				<div>
-					<h1 className={styles.headerTitle}>Settings</h1>
-					<p className={styles.headerSubtitle}>Manage your portal preferences and account security</p>
-				</div>
-				
-				<div className={styles.tabsContainer}>
-					{["Profile", "Security", "Notifications", "Preferences"].map(tab => (
-						<button 
-							key={tab}
-							className={`${styles.tab} ${activeTab === tab ? styles.tabActive : ""}`}
-							onClick={() => setActiveTab(tab)}
-						>
-							{tab}
-						</button>
-					))}
-				</div>
-			</div>
+			<div className={styles.container}>
+				<header className={styles.header}>
+					<h1 className={styles.title}>Account Settings</h1>
+					<div className={styles.tabs}>
+						{["Profile", "Security"].map(tab => (
+							<button 
+								key={tab} 
+								className={`${styles.tabBtn} ${activeTab === tab ? styles.active : ""}`}
+								onClick={() => setActiveTab(tab)}
+							>
+								{tab}
+							</button>
+						))}
+					</div>
+				</header>
 
-			{error ? <div style={{ color: "#b9383d", fontWeight: 600 }}>{error}</div> : null}
-
-			<div className={styles.settingsGrid}>
-				<div className={styles.leftCol}>
-					<div className={styles.card}>
-						<div className={styles.profileHeader}>
-							<div className={styles.profileImageWrapper}>
-								<img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`} alt="Profile" className={styles.profileImage} />
-								<div className={styles.editImageBtn}>
-									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+				<div className={styles.card}>
+					{activeTab === "Profile" ? (
+						<form onSubmit={handleRequestUpdate} className={styles.form}>
+							<div className={styles.profileSection}>
+								<div className={styles.avatarLarge} style={{ position: 'relative', cursor: 'pointer' }} onClick={() => document.getElementById('dp-upload').click()}>
+									{user?.profilePicture ? (
+										<img src={`http://localhost:5000${user.profilePicture}`} alt="Avatar" style={{width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover'}} />
+									) : (
+										<img src={`https://ui-avatars.com/api/?name=${(user?.name || "User").replace(' ', '+')}&background=random`} alt="Avatar" style={{width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover'}} />
+									)}
+									<div style={{ position: 'absolute', bottom: 0, right: 0, background: 'var(--primary)', color: 'white', borderRadius: '50%', padding: '6px' }}>
+										<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+									</div>
+									<input id="dp-upload" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} />
+								</div>
+								<div>
+									<h2 className={styles.sectionTitle}>Personal Identity</h2>
+									<p className={styles.sectionDesc}>Manage your profile details and clinical identifiers.</p>
 								</div>
 							</div>
-							<div>
-								<h2 className={styles.cardTitle}>Personal Details</h2>
-								<p className={styles.cardDesc} style={{ marginBottom: 0 }}>Update your medical identity and contact information.</p>
-								<div className={styles.badges}>
-									<span className={`${styles.badge} ${styles.badgeVerified}`}>{(profile?.isEmailVerified || false) ? "EMAIL VERIFIED" : "UNVERIFIED"}</span>
-									<span className={`${styles.badge} ${styles.badgePremium}`}>PREMIUM PLAN</span>
+
+							<div className={styles.formGrid}>
+								<InputField label="Full Name" name="fullName" value={form.fullName} onChange={handleChange} placeholder="Full Name" />
+								<InputField label="Email Address (Immutable)" name="email" value={form.email} readOnly disabled />
+								<InputField label="Phone Number" name="phone" value={form.phone} onChange={handleChange} placeholder="Phone Number" />
+								<InputField label="Date of Birth" name="dateOfBirth" value={form.dateOfBirth} onChange={handleChange} type="date" />
+							</div>
+
+							{showOtp && otpContext === "profile" && (
+								<div className={styles.otpSection}>
+									<InputField label="Enter Verification Code" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="6-digit OTP" />
+									<Button onClick={handleVerifyAndSave} loading={loading} style={{marginTop: '10px'}}>Verify & Save Changes</Button>
+								</div>
+							)}
+
+							{(!showOtp || otpContext !== "profile") && (
+								<div className={styles.formFooter}>
+									<Button type="submit" loading={loading}>Update Profile Details</Button>
+								</div>
+							)}
+						</form>
+					) : (
+						<form onSubmit={handlePasswordUpdate} className={styles.form}>
+							<h2 className={styles.sectionTitle}>Security Credentials</h2>
+							<p className={styles.sectionDesc}>Update your password to keep your medical data secure.</p>
+							
+							<div className={styles.formGrid}>
+								<InputField label="Current Password" name="currentPassword" type="password" value={form.currentPassword} onChange={handleChange} required />
+								<div style={{gridColumn: '1/-1'}}>
+									<InputField label="New Password" name="newPassword" type="password" value={form.newPassword} onChange={handleChange} required />
+								</div>
+								<div style={{gridColumn: '1/-1'}}>
+									<InputField label="Confirm New Password" name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} required />
 								</div>
 							</div>
-						</div>
 
-						<div className={styles.formGrid}>
-							<div className={styles.formGroup}>
-								<label className={styles.label}>FULL NAME</label>
-								<input type="text" className={styles.input} value={displayName} readOnly />
-							</div>
-							<div className={styles.formGroup}>
-								<label className={styles.label}>EMAIL ADDRESS</label>
-								<input type="email" className={styles.input} value={displayEmail} readOnly />
-							</div>
-							<div className={styles.formGroup}>
-								<label className={styles.label}>PHONE NUMBER</label>
-								<input type="tel" className={styles.input} value={profile?.phone || "Not set"} readOnly />
-							</div>
-							<div className={styles.formGroup}>
-								<label className={styles.label}>DATE OF BIRTH</label>
-								<input type="text" className={styles.input} value={profile?.dob || "Not set"} readOnly />
-							</div>
-							<div className={styles.formGroup} style={{ gridColumn: "1 / -1" }}>
-								<label className={styles.label}>BLOOD GROUP</label>
-								<input type="text" className={styles.input} value={profile?.bloodGroup || "Not set"} readOnly />
-							</div>
-						</div>
-					</div>
+							{showOtp && otpContext === "password" && (
+								<div className={styles.otpSection}>
+									<InputField label="Enter Verification Code" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="6-digit OTP" />
+									<Button onClick={handleVerifyAndSave} loading={loading} style={{marginTop: '10px'}}>Verify & Change Password</Button>
+								</div>
+							)}
 
-					<div className={styles.card}>
-						<h2 className={styles.cardTitle}>Security</h2>
-						<p className={styles.cardDesc}>Keep your clinical data secure by updating passwords regularly.</p>
-						
-						<div className={styles.formGrid} style={{ marginBottom: "24px" }}>
-							<div className={styles.formGroup} style={{ gridColumn: "1 / -1" }}>
-								<label className={styles.label}>CURRENT PASSWORD</label>
-								<input type="password" className={styles.input} value="" readOnly placeholder="Hidden for security" />
-							</div>
-							<div className={styles.formGroup}>
-								<label className={styles.label}>NEW PASSWORD</label>
-								<input type="password" className={styles.input} />
-							</div>
-							<div className={styles.formGroup}>
-								<label className={styles.label}>CONFIRM NEW PASSWORD</label>
-								<input type="password" className={styles.input} />
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<div className={styles.rightCol}>
-					<div className={styles.card}>
-						<div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
-							<div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "var(--input-bg)", color: "var(--brand-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-							</div>
-							<h2 className={styles.cardTitle} style={{ margin: 0 }}>Alerts</h2>
-						</div>
-
-						<div className={styles.toggleRow}>
-							<div>
-								<div className={styles.toggleLabel}>Email Alerts</div>
-								<div className={styles.toggleDesc}>Appointment reminders</div>
-							</div>
-							<div className={`${styles.toggleSwitch} ${alerts.email ? styles.active : ""}`} onClick={() => toggleAlert('email')}></div>
-						</div>
-						<div className={styles.toggleRow}>
-							<div>
-								<div className={styles.toggleLabel}>SMS Alerts</div>
-								<div className={styles.toggleDesc}>Critical health updates</div>
-							</div>
-							<div className={`${styles.toggleSwitch} ${alerts.sms ? styles.active : ""}`} onClick={() => toggleAlert('sms')}></div>
-						</div>
-						<div className={styles.toggleRow}>
-							<div>
-								<div className={styles.toggleLabel}>Newsletter</div>
-								<div className={styles.toggleDesc}>Monthly clinical insights</div>
-							</div>
-							<div className={`${styles.toggleSwitch} ${alerts.newsletter ? styles.active : ""}`} onClick={() => toggleAlert('newsletter')}></div>
-						</div>
-					</div>
-
-					<div className={styles.card} style={{ background: "var(--input-bg)", boxShadow: "none" }}>
-						<h3 style={{ margin: "0 0 16px", fontSize: "0.85rem", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "1px" }}>Last Active Sessions</h3>
-						
-						<div className={styles.sessionItem}>
-							<div className={styles.sessionIcon}>
-								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-							</div>
-							<div>
-								<div className={styles.sessionTitle}>MacBook Pro - London</div>
-								<div className={`${styles.sessionDesc} ${styles.sessionActive}`}>Active Now • Chrome</div>
-							</div>
-						</div>
-						
-						<div className={styles.sessionItem}>
-							<div className={styles.sessionIcon}>
-								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-							</div>
-							<div>
-								<div className={styles.sessionTitle}>iPhone 15 - London</div>
-								<div className={styles.sessionDesc}>2 hours ago • MediSync App</div>
-							</div>
-						</div>
-
-						<button className={styles.logoutAllBtn}>{loading ? "Loading profile..." : "Log out from all devices"}</button>
-					</div>
-
-					<div className={styles.actionGrid}>
-						<button className={styles.saveBtn}>Save All Changes</button>
-						<button className={styles.discardBtn}>Discard</button>
-					</div>
+							{(!showOtp || otpContext !== "password") && (
+								<div className={styles.formFooter}>
+									<Button type="submit" loading={loading}>Change Password</Button>
+								</div>
+							)}
+						</form>
+					)}
 				</div>
 			</div>
-		</DashboardLayout>
 	);
 };
 

@@ -60,10 +60,12 @@ const extractSessionFromAuthPayload = (data, fallbackUser = {}) => {
 				name: data?.name,
 				email: data?.email,
 				role: data?.role || fallbackUser?.role || "patient",
+				profilePicture: data?.profilePicture || fallbackUser?.profilePicture || "",
 			}
 			: {
 				email: fallbackUser?.email || "",
 				role: fallbackUser?.role || "patient",
+				profilePicture: fallbackUser?.profilePicture || "",
 			});
 
 	return { nextToken, nextUser };
@@ -139,6 +141,14 @@ export const AuthProvider = ({ children }) => {
 		clearSession();
 	}, [clearSession]);
 
+	const updateUser = useCallback((updatedData) => {
+		setUser(prev => {
+			const nextUser = { ...prev, ...updatedData };
+			safeSetItem(USER_KEY, JSON.stringify(nextUser));
+			return nextUser;
+		});
+	}, []);
+
 	const contextValue = useMemo(
 		() => ({
 			token,
@@ -148,8 +158,9 @@ export const AuthProvider = ({ children }) => {
 			login,
 			completeAuthSession,
 			logout,
+			updateUser,
 		}),
-		[token, user, authLoading, login, completeAuthSession, logout]
+		[token, user, authLoading, login, completeAuthSession, logout, updateUser]
 	);
 
 	return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;

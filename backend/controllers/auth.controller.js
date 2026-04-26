@@ -90,6 +90,7 @@ exports.login = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        profilePicture: user.profilePicture || '',
         token: generateToken(user._id),
       });
 
@@ -138,7 +139,7 @@ exports.sendOtp = async (req, res) => {
       });
     }
 
-    if (purpose === 'reset-password') {
+    if (purpose === 'reset-password' || purpose === 'update-profile') {
       const user = await User.findOne({ email });
 
       if (!user) {
@@ -348,6 +349,73 @@ exports.resetPassword = async (req, res) => {
     res.json({
       message: 'Password reset successful. You can now login with your new password.',
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Update profile with OTP verification
+exports.updateProfile = async (req, res) => {
+  try {
+    const { fullName, phone, dateOfBirth, otp } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Verify OTP
+    if (!user.otp || !user.otpExpiresAt || new Date() > user.otpExpiresAt) {
+      return res.status(400).json({ message: 'OTP expired or not requested.' });
+    }
+    if (user.otp !== otp) {
+      return res.status(400).json({ message: 'Incorrect OTP.' });
+    }
+
+    // Clear OTP and update
+    user.otp = null;
+    user.otpExpiresAt = null;
+    if (fullName) user.name = fullName;
+    await user.save();
+
+    // Update associated profile
+    const Doctor = require('../models/doctor.model');
+    const Patient = require('../models/patient.model');
+
+    if (user.role === 'doctor') {
+      await Doctor.findOneAndUpdate({ user: user._id }, { phone, dateOfBirth });
+    } else {
+      await Patient.findOneAndUpdate({ user: user._id }, { phone, dateOfBirth });
+    }
+
+    res.json({ message: 'Profile updated successfully', user });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Update password (protected)
+exports.updatePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword, otp } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!user || !(await bcrypt.compare(currentPassword, user.password))) {
+      return res.status(401).json({ message: 'Incorrect current password.' });
+    }
+
+    // Verify OTP
+    if (!user.otp || !user.otpExpiresAt || new Date() > user.otpExpiresAt) {
+      return res.status(400).json({ message: 'OTP expired or not requested.' });
+    }
+    if (user.otp !== otp) {
+      return res.status(400).json({ message: 'Incorrect OTP.' });
+    }
+
+    user.otp = null;
+    user.otpExpiresAt = null;
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.json({ message: 'Password updated successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

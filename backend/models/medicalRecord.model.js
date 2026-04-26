@@ -21,13 +21,11 @@ const medicalRecordSchema = new mongoose.Schema(
 		doctor: {
 			type: mongoose.Schema.Types.ObjectId,
 			ref: 'Doctor',
-			required: true,
 			index: true,
 		},
 		appointment: {
 			type: mongoose.Schema.Types.ObjectId,
 			ref: 'Appointment',
-			required: true,
 			index: true,
 		},
 		title: { type: String, trim: true, required: true, maxlength: 120 },

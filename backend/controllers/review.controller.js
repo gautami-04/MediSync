@@ -1,13 +1,29 @@
 const Review = require('../models/review.model');
+const Patient = require('../models/patient.model');
 
 exports.addReview = async (req, res) => {
   try {
     const { doctorId, rating, comment } = req.body;
 
-    // check if patient had a completed appointment with this doctor
+    if (!doctorId || !rating) {
+      return res.status(400).json({ message: 'Doctor ID and rating are required' });
+    }
+
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+    }
+
+    // Find the patient profile for the current user
     const Appointment = require('../models/appointment.model');
+    const patientProfile = await Patient.findOne({ user: req.user._id });
+    
+    if (!patientProfile) {
+      return res.status(403).json({ message: 'Patient profile not found. Complete your profile first.' });
+    }
+
+    // Check if patient had a completed appointment with this doctor
     const appointment = await Appointment.findOne({
-      patient: req.user._id,
+      patient: patientProfile._id,
       doctor: doctorId,
       status: 'completed'
     });
@@ -23,7 +39,7 @@ exports.addReview = async (req, res) => {
     });
 
     if (existing) {
-      return res.status(400).json({ message: 'Already reviewed this doctor' });
+      return res.status(400).json({ message: 'You have already reviewed this doctor' });
     }
 
     const review = await Review.create({
@@ -33,7 +49,8 @@ exports.addReview = async (req, res) => {
       comment,
     });
 
-    res.status(201).json(review);
+    const populated = await Review.findById(review._id).populate('patient', 'name email profilePicture');
+    res.status(201).json(populated);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

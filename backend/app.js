@@ -1,5 +1,5 @@
 const express = require('express');
-const cors = require('cors');
+const cors = require('cors'); // Heartbeat restart
 const path = require('path');
 const authRoutes = require('./routes/auth.routes');
 const app = express();

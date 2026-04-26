@@ -3,27 +3,34 @@ import {
   FiUsers, 
   FiActivity, 
   FiDollarSign, 
-  FiCheckCircle
+  FiCheckCircle,
+  FiUserCheck,
+  FiCalendar
 } from 'react-icons/fi';
 import api from '../../services/api';
 import DashboardLayout from "../../components/DashboardLayout";
+import Button from "../../components/Button";
+import { useToast } from "../../components/ToastContext";
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { addToast } = useToast();
 
   useEffect(() => {
     const fetchAdminData = async () => {
       try {
         const [statsRes, doctorsRes] = await Promise.all([
-          api.get('/api/admin/payment-stats'),
+          api.get('/api/admin/dashboard'),
           api.get('/api/admin/doctors')
         ]);
         setStats(statsRes.data);
         setDoctors(doctorsRes.data?.data || doctorsRes.data || []);
       } catch (err) {
         console.error('Failed to fetch admin data', err);
+        setError('Unable to load administration data.');
       } finally {
         setLoading(false);
       }
@@ -35,87 +42,99 @@ const AdminDashboard = () => {
     try {
       await api.put(`/api/admin/doctors/${id}/approve`);
       setDoctors(doctors.map(doc => doc._id === id ? { ...doc, isApproved: true } : doc));
+      addToast("Doctor approved successfully", "success");
     } catch (err) {
-      alert('Failed to approve doctor');
+      addToast(err.response?.data?.message || 'Failed to approve doctor', "error");
     }
   };
 
-  if (loading) return <DashboardLayout><div className="p-10 text-center">Loading Admin Portal...</div></DashboardLayout>;
+  if (loading) return <div>Loading clinical administration...</div>;
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-800">Admin Control Center</h1>
+    <>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+        <header>
+          <h1 style={{ fontSize: '1.8rem', fontWeight: 800 }}>Clinical Operations Center</h1>
+          <p style={{ color: 'var(--text-muted)' }}>Oversee system health, revenue, and medical practitioners.</p>
+        </header>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-            <div className="p-4 bg-green-50 rounded-lg text-green-600"><FiDollarSign size={24} /></div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
+          <div className="stat-card" style={{ background: 'white', padding: '24px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ padding: '12px', background: 'var(--primary-light)', color: 'var(--primary)', borderRadius: 'var(--radius-sm)' }}><FiDollarSign size={24} /></div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">Total Revenue</p>
-              <h3 className="text-2xl font-bold text-gray-800">₹{stats?.totalRevenue || 0}</h3>
+              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>System Revenue</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>₹{stats?.totalRevenue || 0}</div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-            <div className="p-4 bg-blue-50 rounded-lg text-blue-600"><FiUsers size={24} /></div>
+          <div className="stat-card" style={{ background: 'white', padding: '24px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ padding: '12px', background: '#e0f2fe', color: '#0369a1', borderRadius: 'var(--radius-sm)' }}><FiUserCheck size={24} /></div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">Total Doctors</p>
-              <h3 className="text-2xl font-bold text-gray-800">{doctors.length}</h3>
+              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Doctors</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{stats?.stats?.totalDoctors || doctors.length}</div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-            <div className="p-4 bg-purple-50 rounded-lg text-purple-600"><FiActivity size={24} /></div>
+          <div className="stat-card" style={{ background: 'white', padding: '24px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ padding: '12px', background: '#fef3c7', color: '#b45309', borderRadius: 'var(--radius-sm)' }}><FiCalendar size={24} /></div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">System Health</p>
-              <h3 className="text-2xl font-bold text-gray-800">Optimal</h3>
+              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Appointments</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{stats?.stats?.totalAppointments || 0}</div>
             </div>
           </div>
         </div>
 
         {/* Doctor Approval Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-lg font-bold text-gray-800">Doctor Verification Requests</h2>
+        <div style={{ background: 'white', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
+          <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)' }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Practitioner Verification Queue</h2>
           </div>
-          <table className="w-full text-left">
-            <thead className="bg-gray-50 text-gray-500 text-sm uppercase">
-              <tr>
-                <th className="px-6 py-3 font-semibold">Doctor</th>
-                <th className="px-6 py-3 font-semibold">Specialization</th>
-                <th className="px-6 py-3 font-semibold">Status</th>
-                <th className="px-6 py-3 font-semibold">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {doctors.map(doc => (
-                <tr key={doc._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-gray-800">{doc.user?.name}</div>
-                    <div className="text-xs text-gray-500">{doc.user?.email}</div>
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">{doc.specialization}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${doc.isApproved ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                      {doc.isApproved ? 'Approved' : 'Pending'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    {!doc.isApproved && (
-                      <button 
-                        onClick={() => approveDoctor(doc._id)}
-                        className="flex items-center gap-1 bg-primary-600 text-white px-3 py-1 rounded text-sm hover:bg-primary-700"
-                      >
-                        <FiCheckCircle /> Approve
-                      </button>
-                    )}
-                  </td>
+          
+          {doctors.length > 0 ? (
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead style={{ background: '#f8fafc', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                <tr>
+                  <th style={{ padding: '16px 24px' }}>Practitioner</th>
+                  <th style={{ padding: '16px 24px' }}>Specialization</th>
+                  <th style={{ padding: '16px 24px' }}>Status</th>
+                  <th style={{ padding: '16px 24px' }}>Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody style={{ fontSize: '0.95rem' }}>
+                {doctors.map(doc => (
+                  <tr key={doc._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                    <td style={{ padding: '16px 24px' }}>
+                      <div style={{ fontWeight: 700 }}>{doc.user?.name || 'Incomplete Profile'}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{doc.user?.email}</div>
+                    </td>
+                    <td style={{ padding: '16px 24px' }}>{doc.specialization || 'N/A'}</td>
+                    <td style={{ padding: '16px 24px' }}>
+                      <span style={{ padding: '4px 12px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 800, background: doc.isApproved ? '#dcfce7' : '#fef3c7', color: doc.isApproved ? '#166534' : '#92400e' }}>
+                        {doc.isApproved ? 'VERIFIED' : 'PENDING'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '16px 24px' }}>
+                      {!doc.isApproved && (
+                        <Button 
+                          onClick={() => approveDoctor(doc._id)}
+                          style={{ height: '36px', padding: '0 16px', fontSize: '0.85rem' }}
+                        >
+                          Verify Practitioner
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <FiActivity size={48} style={{ opacity: 0.2, marginBottom: '16px' }} />
+              <div>No practitioners awaiting verification.</div>
+            </div>
+          )}
         </div>
       </div>
-    </DashboardLayout>
+    </>
   );
 };
 

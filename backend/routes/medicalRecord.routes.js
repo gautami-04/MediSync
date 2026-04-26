@@ -11,6 +11,7 @@ const {
 	getDoctorPatientRecords,
 	updateMedicalRecord,
 	deleteMedicalRecord,
+	patientUploadRecord,
 } = require('../controllers/medicalRecord.controller');
 
 // Multer Config
@@ -22,18 +23,29 @@ const storage = multer.diskStorage({
     cb(null, `${Date.now()}-${file.originalname}`);
   }
 });
-const upload = multer({ storage });
+
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = /jpeg|jpg|png|pdf/;
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = allowedTypes.test(file.mimetype);
+
+  if (extname && mimetype) {
+    return cb(null, true);
+  } else {
+    cb(new Error('Only PNG, JPEG, and PDF files are allowed.'));
+  }
+};
+
+const upload = multer({ 
+  storage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
 
 router.post('/', protect, authorizeRoles('doctor'), createMedicalRecord);
 
 // Patient Upload Route
-router.post('/upload', protect, upload.single('file'), (req, res) => {
-  if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
-  res.json({ 
-    message: 'File uploaded successfully', 
-    filePath: `/uploads/${req.file.filename}` 
-  });
-});
+router.post('/upload', protect, authorizeRoles('patient'), upload.single('file'), patientUploadRecord);
 
 router.get('/my', protect, authorizeRoles('patient'), getMyMedicalRecords);
 router.get('/doctor', protect, authorizeRoles('doctor'), getDoctorPatientRecords);

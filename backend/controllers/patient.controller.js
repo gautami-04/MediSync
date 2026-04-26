@@ -139,6 +139,7 @@ const getMyPatientProfile = async (req, res) => {
 const upsertPatientProfile = async (req, res) => {
 	try {
 		const allowedFields = [
+			'name',
 			'phone',
 			'gender',
 			'dateOfBirth',
@@ -155,6 +156,12 @@ const upsertPatientProfile = async (req, res) => {
 			if (req.body[key] !== undefined) {
 				updateData[key] = req.body[key];
 			}
+		}
+
+		// Update User name if provided
+		if (updateData.name) {
+			await User.findByIdAndUpdate(req.user._id, { name: updateData.name });
+			delete updateData.name;
 		}
 
 		const patient = await Patient.findOneAndUpdate(
@@ -175,7 +182,7 @@ const getPatientDashboard = async (req, res) => {
 		const now = new Date();
 		const patientRefs = [req.user._id, patient._id];
 
-		const [appointments, recentRecords, user, recentPayments, paymentsAgg] = await Promise.all([
+		const [appointments, recentRecords, totalRecordsCount, user, recentPayments, paymentsAgg] = await Promise.all([
 			Appointment.find({ patient: { $in: patientRefs } })
 				.populate(getAppointmentDoctorPopulate())
 				.lean(),
@@ -184,6 +191,7 @@ const getPatientDashboard = async (req, res) => {
 				.limit(5)
 				.populate(getMedicalRecordDoctorPopulate())
 				.lean(),
+			MedicalRecord.countDocuments({ patient: { $in: patientRefs } }),
 			User.findById(req.user._id).lean(),
 			Payment.find({ $or: [{ patient: { $in: patientRefs } }, { user: { $in: patientRefs } }] })
 				.sort({ createdAt: -1 })
@@ -201,7 +209,7 @@ const getPatientDashboard = async (req, res) => {
 		).length;
 		const upcomingAppointments = appointments.filter((item) => {
 			const status = item.status || 'booked';
-			if (!['booked', 'rescheduled'].includes(status)) return false;
+			if (!['booked', 'confirmed', 'rescheduled'].includes(status)) return false;
 
 			const scheduledTime = getAppointmentDate(item);
 			return scheduledTime >= now;
@@ -217,15 +225,15 @@ const getPatientDashboard = async (req, res) => {
 		const savedDoctorsCount = (user?.savedDoctors && Array.isArray(user.savedDoctors)) ? user.savedDoctors.length : 0;
 
 		return res.status(200).json({
-			summary: {
-				totalAppointments,
-				upcomingAppointments,
-				completedAppointments,
-				medicalRecords: recentRecords.length,
-				unreadNotifications,
-				totalSpent,
-				savedDoctorsCount,
+			appointmentStats: {
+				total: totalAppointments,
+				upcoming: upcomingAppointments,
+				completed: completedAppointments,
 			},
+			recordsCount: totalRecordsCount,
+			unreadNotifications,
+			totalSpent,
+			savedDoctorsCount,
 			recentAppointments,
 			recentRecords,
 			recentPayments,

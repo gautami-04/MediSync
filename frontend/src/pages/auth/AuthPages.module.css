@@ -1,333 +1,78 @@
 .page {
   min-height: 100vh;
   display: flex;
-  background-color: var(--bg-1);
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-main);
+  padding: 40px 20px;
 }
 
-/* Login specific layout */
-.loginLayout {
+.registerLayout, .loginLayout {
   width: 100%;
-  min-height: 100vh;
-  background: #ffffff;
-  display: grid;
-  grid-template-columns: 45% 55%;
-}
-
-/* Register specific layout */
-.registerLayout {
-  width: 100%;
-  min-height: 100vh;
-  background: #ffffff;
-  display: flex;
-  flex-direction: column;
-  padding: 40px 5vw;
-}
-
-/* Forgot Password Layout */
-.forgotLayout {
-  width: min(500px, 100%);
-  border-radius: 24px;
-  background: #ffffff;
-  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.05);
+  max-width: 480px;
+  background: white;
   padding: 40px;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Login Left Panel */
-.infoPanel {
-  background-color: var(--bg-dark);
-  color: #ffffff;
-  padding: 48px;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  overflow: hidden;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin: 0;
-}
-
-.brandIcon {
-  color: #4cd964; /* Brand green */
-}
-
-.infoTitle {
-  margin: 40px 0 10px;
-  font-size: 3rem;
-  font-weight: 400;
-  line-height: 1.1;
-  color: #8fa69d;
-}
-
-.infoTitle span {
-  font-weight: 700;
-  color: #ffffff;
-}
-
-.infoImageWrapper {
-  margin-top: auto;
-  border-radius: 16px;
-  overflow: hidden;
-  position: relative;
-}
-
-.infoImage {
-  width: 100%;
-  height: auto;
-  display: block;
-  opacity: 0.8;
-  mix-blend-mode: luminosity;
-}
-
-.securityBadge {
-  position: absolute;
-  bottom: 24px;
-  left: 24px;
-  background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(10px);
-  padding: 12px 16px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
   gap: 12px;
-  font-size: 0.85rem;
-}
-
-/* Login Right Panel */
-.formPanel {
-  padding: 64px 80px;
-  display: flex;
-  flex-direction: column;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 32px;
   justify-content: center;
-  background: #ffffff;
 }
 
-.heading {
-  margin: 0;
-  color: var(--text-primary);
-  font-size: 2rem;
-  font-weight: 700;
-}
-
-.subHeading {
-  margin: 8px 0 40px;
-  color: var(--text-secondary);
-  font-size: 1rem;
+.title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 8px;
+  text-align: center;
 }
 
 .form {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  margin-top: 32px;
 }
 
 .fieldGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 20px;
 }
 
-.fieldGridWide {
-  grid-column: 1 / -1;
-}
-
-/* Keep signed in row */
 .checkboxRow {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 8px;
-  margin-bottom: 24px;
   font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-.checkbox {
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 2px solid var(--input-bg);
-  background: var(--input-bg);
+  color: var(--text-muted);
   cursor: pointer;
-  position: relative;
 }
 
-.checkbox:checked {
-  background: var(--brand-primary);
-  border-color: var(--brand-primary);
+.formFooter {
+  margin-top: 10px;
 }
 
-/* Footer & Links */
-.footerText {
-  margin-top: 32px;
-  text-align: center;
-  color: var(--text-secondary);
-  font-size: 0.95rem;
-}
-
-.footerText a {
-  color: var(--brand-primary);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.footerText a:hover {
-  text-decoration: underline;
-}
-
-/* Alert styles */
 .alert {
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-bottom: 24px;
-  font-size: 0.95rem;
-}
-.successAlert {
-  background: #e2f1e9;
-  color: var(--brand-primary);
-}
-.errorAlert {
-  background: #fdeaea;
-  color: #d32f2f;
-}
-
-/* Trust Indicators */
-.trustIndicators {
-  display: flex;
-  justify-content: space-between;
-  margin-top: auto;
-  padding-top: 48px;
-}
-
-.trustItem {
-  display: flex;
-  flex-direction: column;
-}
-
-.trustValue {
-  color: #d3a846; /* Gold/yellow color */
-  font-size: 1.25rem;
-  font-weight: 700;
-}
-
-.trustLabel {
-  color: var(--text-secondary);
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-top: 4px;
-}
-
-/* OTP Specific */
-.otpRow {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  margin: 24px 0;
-}
-
-.otpInput {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: none;
-  background: var(--input-bg);
-  text-align: center;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.otpInput:focus {
-  outline: 2px solid var(--brand-primary);
-}
-
-/* Register layout extra */
-.registerHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 32px;
-}
-.roleTabs {
-  display: flex;
-  background: var(--input-bg);
-  border-radius: 99px;
-  padding: 4px;
-  margin: 24px 0;
-  width: fit-content;
-}
-.roleTab {
-  padding: 8px 24px;
-  border-radius: 99px;
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-weight: 500;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
   font-size: 0.9rem;
-}
-.roleTabActive {
-  background: var(--brand-primary);
-  color: white;
+  font-weight: 600;
+  text-align: center;
 }
 
-.registerContentGrid {
-  display: grid;
-  grid-template-columns: 1fr 280px;
-  gap: 40px;
-  flex: 1;
-}
-
-.registerImageWrapper {
-  position: relative;
-  border-radius: 16px;
-  overflow: hidden;
-  height: 100%;
-  background: var(--bg-dark);
-}
-
-/* Responsive Design */
-@media (max-width: 992px) {
-  .loginLayout {
-    grid-template-columns: 1fr;
-  }
-  .infoPanel {
-    display: none; /* Hide image panel on small screens */
-  }
-  .formPanel {
-    padding: 40px 5vw;
-  }
-  .registerHeader {
-    flex-direction: column;
-    gap: 16px;
-  }
-  .registerContentGrid {
-    grid-template-columns: 1fr;
-  }
-  .registerImageWrapper {
-    display: none;
-  }
-}
-
-@media (max-width: 768px) {
-  .fieldGrid {
-    grid-template-columns: 1fr;
-  }
-  .otpRow {
-    gap: 8px;
-  }
-  .otpInput {
-    width: 40px;
-    height: 40px;
-    font-size: 1.1rem;
-  }
+.errorAlert {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
 }

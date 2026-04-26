@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { getMyDoctorProfile, upsertDoctorProfile } from '../../services/doctor.service';
+import { uploadProfilePicture } from '../../services/user.service';
 import useAuth from '../../hooks/useAuth';
-import DashboardLayout from '../../components/DashboardLayout';
+import { useToast } from '../../components/ToastContext';
 import styles from './DoctorProfile.module.css';
 
 const DoctorProfile = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
+  const { addToast } = useToast();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -17,7 +19,8 @@ const DoctorProfile = () => {
     specialization: '',
     qualification: '',
     hospital: '',
-    bio: ''
+    bio: '',
+    profilePicture: ''
   });
 
   useEffect(() => {
@@ -34,7 +37,8 @@ const DoctorProfile = () => {
             specialization: data.specialization || prev.specialization,
             qualification: data.qualification || prev.qualification,
             experienceYears: data.experienceYears || prev.experienceYears,
-            hospital: data.hospital || prev.hospital
+            hospital: data.hospital || prev.hospital,
+            profilePicture: data.user?.profilePicture || ''
           }));
         }
       } catch (err) {
@@ -55,23 +59,43 @@ const DoctorProfile = () => {
   const handleSave = async () => {
     try {
       await upsertDoctorProfile({
+        name: formData.name,
         bio: formData.bio,
         specialization: formData.specialization,
         qualification: formData.qualification,
         experienceYears: formData.experienceYears,
         hospital: formData.hospital
       });
-      alert('Profile updated successfully');
+      // Sync name in global auth state so navbar updates immediately
+      if (formData.name) updateUser({ name: formData.name });
+      addToast('Profile updated successfully', 'success');
     } catch (err) {
       console.error(err);
-      alert('Failed to update profile');
+      addToast('Failed to update profile', 'error');
     }
   };
 
-  if (loading) return <DashboardLayout activePath="/doctor/profile"><div>Loading profile...</div></DashboardLayout>;
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formDataFile = new FormData();
+    formDataFile.append('profilePicture', file);
+
+    try {
+      const data = await uploadProfilePicture(formDataFile);
+      setFormData(prev => ({ ...prev, profilePicture: data.profilePicture }));
+      updateUser({ profilePicture: data.profilePicture });
+      addToast('Profile picture updated', 'success');
+    } catch (err) {
+      console.error(err);
+      addToast('Failed to upload profile picture', 'error');
+    }
+  };
+
+  if (loading) return <div>Loading profile...</div>;
 
   return (
-    <DashboardLayout activePath="/doctor/profile">
     <div className={styles.container}>
       <div className={styles.header}>
         <h1 className={styles.headerTitle}>Edit Professional Profile</h1>
@@ -83,10 +107,15 @@ const DoctorProfile = () => {
       <div className={styles.contentGrid}>
         <div className={styles.formSection}>
           <div className={styles.profileAvatarGroup}>
-            <img src={`https://ui-avatars.com/api/?name=${formData.name.replace(' ', '+')}&background=random`} alt="Avatar" className={styles.avatarImage} />
-            <button className={styles.editAvatarBtn}>
+            <img 
+              src={formData.profilePicture ? `http://localhost:5000${formData.profilePicture}` : `https://ui-avatars.com/api/?name=${formData.name.replace(' ', '+')}&background=random`} 
+              alt="Avatar" 
+              className={styles.avatarImage} 
+            />
+            <label className={styles.editAvatarBtn}>
+              <input type="file" onChange={handleFileUpload} style={{display: 'none'}} />
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-            </button>
+            </label>
           </div>
 
           <div className={styles.formRow}>
@@ -153,7 +182,11 @@ const DoctorProfile = () => {
               </div>
             </div>
             <div className={styles.previewBody}>
-              <img src={`https://ui-avatars.com/api/?name=${formData.name.replace(' ', '+')}&background=random`} alt="Avatar" className={styles.previewAvatar} />
+              <img 
+                src={formData.profilePicture ? `http://localhost:5000${formData.profilePicture}` : `https://ui-avatars.com/api/?name=${formData.name.replace(' ', '+')}&background=random`} 
+                alt="Avatar" 
+                className={styles.previewAvatar} 
+              />
               <div className={styles.previewName}>{formData.name || 'Dr. Name'}</div>
               <div className={styles.previewSpec}>{formData.specialization || 'Specialization'} • {formData.experienceYears} Years Exp.</div>
               
@@ -186,7 +219,6 @@ const DoctorProfile = () => {
         </div>
       </div>
     </div>
-    </DashboardLayout>
   );
 };
 

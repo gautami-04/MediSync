@@ -1,7 +1,9 @@
 const User = require('../models/user.model');
 const Doctor = require('../models/doctor.model');
+const Patient = require('../models/patient.model');
 const Appointment = require('../models/appointment.model');
 const Payment = require('../models/payment.model');
+
 
 const getAdminDashboardStats = async (req, res) => {
   try {
@@ -26,6 +28,12 @@ const getAdminDashboardStats = async (req, res) => {
       .limit(5)
       .lean();
 
+    const totalRevenueResult = await Payment.aggregate([
+      { $match: { status: 'paid' } },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+    const totalRevenue = totalRevenueResult.length > 0 ? totalRevenueResult[0].total : 0;
+
     res.json({
       stats: {
         totalUsers,
@@ -36,6 +44,7 @@ const getAdminDashboardStats = async (req, res) => {
         pendingAppointments,
         cancelledAppointments,
       },
+      totalRevenue,
       recentUsers,
     });
   } catch (error) {
@@ -111,8 +120,8 @@ const getAllAppointments = async (req, res) => {
     const skip = (page - 1) * limit;
     const [appointments, total] = await Promise.all([
       Appointment.find()
-        .populate('patient', 'name email')
-        .populate('doctor', 'name email')
+        .populate({ path: 'patient', populate: { path: 'user', select: 'name email' } })
+        .populate({ path: 'doctor', populate: { path: 'user', select: 'name email' } })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
@@ -143,6 +152,24 @@ const getPaymentStats = async (req, res) => {
   }
 };
 
+// Delete user
+const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (user.role === 'admin') return res.status(403).json({ message: 'Cannot delete admin users' });
+    
+    // Also delete associated profiles
+    if (user.role === 'doctor') await Doctor.findOneAndDelete({ user: user._id });
+    if (user.role === 'patient') await Patient.findOneAndDelete({ user: user._id });
+    
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ message: 'User and associated profile deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getAdminDashboardStats,
   getAllUsers,
@@ -150,5 +177,6 @@ module.exports = {
   approveDoctor,
   rejectDoctor,
   getAllAppointments,
-  getPaymentStats
+  getPaymentStats,
+  deleteUser
 };

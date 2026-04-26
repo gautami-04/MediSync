@@ -103,7 +103,7 @@ const AdminAppointments = () => {
 	];
 
 	return (
-		<DashboardLayout activePath="/appointments">
+		<>
 			<div className={styles.header}>
 				<div>
 					<h1 className={styles.headerTitle}>All Appointments</h1>
@@ -212,7 +212,7 @@ const AdminAppointments = () => {
 					</>
 				)}
 			</div>
-		</DashboardLayout>
+		</>
 	);
 };
 

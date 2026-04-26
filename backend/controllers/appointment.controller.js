@@ -1,5 +1,6 @@
 const Appointment = require('../models/appointment.model');
 const Doctor = require('../models/doctor.model');
+const Patient = require('../models/patient.model');
 const { createNotification } = require('../services/notification.service');
 
 // Book appointment (patient)
@@ -15,6 +16,12 @@ exports.bookAppointment = async (req, res) => {
       return res.status(400).json({ message: 'Please select a doctor' });
     }
 
+    // Get the patient profile for the current user
+    const patientProfile = await Patient.findOne({ user: req.user._id });
+    if (!patientProfile) {
+      return res.status(404).json({ message: 'Patient profile not found. Please complete your profile.' });
+    }
+
     // Check for slot conflict
     const exists = await Appointment.findOne({
       doctor: doctorId,
@@ -27,29 +34,42 @@ exports.bookAppointment = async (req, res) => {
       return res.status(400).json({ message: 'This slot is already booked. Please choose a different time.' });
     }
 
-    // Get the doctor's consultation fee
-    let consultationFee = 0;
     const doctorProfile = await Doctor.findById(doctorId);
-    if (doctorProfile) {
-      consultationFee = doctorProfile.consultationFee || 0;
+    if (!doctorProfile) {
+      return res.status(404).json({ message: 'Doctor not found' });
     }
 
-    const patientId = req.user._id;
+    const consultationFee = doctorProfile.consultationFee || 0;
 
-    // Check if patient already has an appointment at this time
-    const patientConflict = await Appointment.findOne({
-      patient: patientId,
+    // Check availability in doctor's slots
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const bookingDate = new Date(date);
+    const dayOfWeek = days[bookingDate.getDay()];
+
+    const matchingSlot = doctorProfile.availableSlots.find(s => 
+      s.day === dayOfWeek && 
+      s.startTime <= time && 
+      s.endTime >= time
+    );
+
+    if (!matchingSlot) {
+      return res.status(400).json({ message: `Doctor is not available on ${dayOfWeek} at ${time}. Please check their available slots.` });
+    }
+
+    // Check if slot is already taken
+    const alreadyBooked = await Appointment.findOne({
+      doctor: doctorId,
       date,
       time,
-      status: { $ne: 'cancelled' }
+      status: { $nin: ['cancelled'] }
     });
 
-    if (patientConflict) {
-      return res.status(400).json({ message: 'You already have an appointment at this time' });
+    if (alreadyBooked) {
+      return res.status(400).json({ message: 'This time slot is already booked. Please choose another time.' });
     }
 
     const appointment = await Appointment.create({
-      patient: patientId,
+      patient: patientProfile._id,
       doctor: doctorId,
       date,
       time,
@@ -62,15 +82,21 @@ exports.bookAppointment = async (req, res) => {
         path: 'doctor',
         populate: { path: 'user', select: 'name email' },
       })
-      .populate('patient', 'name email');
+      .populate({
+        path: 'patient',
+        populate: { path: 'user', select: 'name email' },
+      });
 
-    await createNotification({
-      recipient: doctorId,
-      type: 'appointment',
-      title: 'New Appointment Booked',
-      message: `A new appointment has been booked for ${date} at ${time}.`,
-      data: { appointmentId: appointment._id }
-    });
+    // Notify doctor
+    if (doctorProfile && doctorProfile.user) {
+      await createNotification({
+        recipient: doctorProfile.user,
+        type: 'appointment',
+        title: 'New Appointment Booked',
+        message: `A new appointment has been booked for ${date} at ${time}.`,
+        data: { appointmentId: appointment._id }
+      });
+    }
 
     res.status(201).json(populated);
   } catch (error) {
@@ -81,16 +107,47 @@ exports.bookAppointment = async (req, res) => {
 // Get my appointments (patient)
 exports.getMyAppointments = async (req, res) => {
   try {
-    const appointments = await Appointment.find({
-      patient: req.user._id,
-    })
-      .populate({
-        path: 'doctor',
-        populate: { path: 'user', select: 'name email' },
-      })
-      .sort({ createdAt: -1 });
+    const patientProfile = await Patient.findOne({ user: req.user._id });
+    if (!patientProfile) {
+      return res.json([]);
+    }
 
-    res.json(appointments);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const query = { patient: patientProfile._id };
+    
+    const [appointments, total, statsAgg] = await Promise.all([
+      Appointment.find(query)
+        .populate({
+          path: 'doctor',
+          populate: { path: 'user', select: 'name email' },
+        })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Appointment.countDocuments(query),
+      Appointment.aggregate([
+        { $match: query },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            upcoming: {
+              $sum: {
+                $cond: [{ $in: ['$status', ['booked', 'confirmed', 'rescheduled']] }, 1, 0]
+              }
+            },
+            completed: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } },
+            cancelled: { $sum: { $cond: [{ $eq: ['$status', 'cancelled'] }, 1, 0] } }
+          }
+        }
+      ])
+    ]);
+
+    const stats = statsAgg[0] || { total: 0, upcoming: 0, completed: 0, cancelled: 0 };
+    res.json({ appointments, total, stats, page, pages: Math.ceil(total / limit) });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -113,12 +170,15 @@ exports.cancelAppointment = async (req, res) => {
       return res.status(400).json({ message: 'Cannot cancel a completed appointment' });
     }
 
-    // Verify ownership (Patient or Doctor)
-    const isPatient = appointment.patient.toString() === req.user._id.toString();
-    const isDoctor = appointment.doctor.toString() === req.user._id.toString();
+    // Identify roles and profiles
+    const patientProfile = await Patient.findOne({ user: req.user._id });
+    const doctorProfile = await Doctor.findOne({ user: req.user._id });
     const isAdmin = req.user.role === 'admin';
 
-    if (!isPatient && !isDoctor && !isAdmin) {
+    const isPatientOwner = patientProfile && appointment.patient.toString() === patientProfile._id.toString();
+    const isDoctorOwner = doctorProfile && appointment.doctor.toString() === doctorProfile._id.toString();
+
+    if (!isPatientOwner && !isDoctorOwner && !isAdmin) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -130,24 +190,36 @@ exports.cancelAppointment = async (req, res) => {
         path: 'doctor',
         populate: { path: 'user', select: 'name email' },
       })
-      .populate('patient', 'name email');
+      .populate({
+        path: 'patient',
+        populate: { path: 'user', select: 'name email' },
+      });
 
-    if (isPatient) {
-      await createNotification({
-        recipient: appointment.doctor,
-        type: 'appointment',
-        title: 'Appointment Cancelled',
-        message: `Appointment on ${appointment.date} at ${appointment.time} has been cancelled.`,
-        data: { appointmentId: appointment._id }
-      });
-    } else if (isDoctor) {
-      await createNotification({
-        recipient: appointment.patient,
-        type: 'appointment',
-        title: 'Appointment Cancelled',
-        message: `Your appointment on ${appointment.date} at ${appointment.time} has been cancelled.`,
-        data: { appointmentId: appointment._id }
-      });
+    // Notify appropriate party
+    if (isPatientOwner) {
+      // Notify doctor
+      const targetDoctor = await Doctor.findById(appointment.doctor);
+      if (targetDoctor) {
+        await createNotification({
+          recipient: targetDoctor.user,
+          type: 'appointment',
+          title: 'Appointment Cancelled',
+          message: `Appointment on ${appointment.date} at ${appointment.time} has been cancelled by the patient.`,
+          data: { appointmentId: appointment._id }
+        });
+      }
+    } else if (isDoctorOwner || isAdmin) {
+      // Notify patient
+      const targetPatient = await Patient.findById(appointment.patient);
+      if (targetPatient) {
+        await createNotification({
+          recipient: targetPatient.user,
+          type: 'appointment',
+          title: 'Appointment Cancelled',
+          message: `Your appointment on ${appointment.date} at ${appointment.time} has been cancelled.`,
+          data: { appointmentId: appointment._id }
+        });
+      }
     }
 
     res.json({ message: 'Appointment cancelled', appointment: populated });
@@ -160,18 +232,60 @@ exports.cancelAppointment = async (req, res) => {
 exports.getDoctorAppointments = async (req, res) => {
   try {
     const doctorProfile = await Doctor.findOne({ user: req.user._id });
+    if (!doctorProfile) return res.json({ appointments: [], total: 0 });
 
-    if (!doctorProfile) {
-      return res.json([]);
+    const { search, status, view, page = 1, limit = 10 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    let query = { doctor: doctorProfile._id };
+    const today = new Date().toLocaleDateString('en-CA');
+
+    if (view === 'upcoming') {
+      query.date = { $gte: today };
+      query.status = { $nin: ['cancelled', 'completed'] };
+    } else if (view === 'past') {
+      query.$or = [
+        { date: { $lt: today } },
+        { status: { $in: ['cancelled', 'completed'] } }
+      ];
     }
 
-    const appointments = await Appointment.find({
-      doctor: doctorProfile._id,
-    })
-      .populate('patient', 'name email')
-      .sort({ createdAt: -1 });
+    if (status) {
+      query.status = status;
+    }
 
-    res.json(appointments);
+    // Search by Patient Name
+    if (search) {
+      const User = require('../models/user.model');
+      const Patient = require('../models/patient.model');
+      
+      const matchingUsers = await User.find({
+        name: { $regex: search, $options: 'i' }
+      }).distinct('_id');
+      
+      const matchingPatients = await Patient.find({
+        user: { $in: matchingUsers }
+      }).distinct('_id');
+      
+      query.patient = { $in: matchingPatients };
+    }
+
+    const total = await Appointment.countDocuments(query);
+    const appointments = await Appointment.find(query)
+      .populate({
+        path: 'patient',
+        populate: { path: 'user', select: 'name email profilePicture' },
+      })
+      .sort({ date: 1, time: 1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    res.json({
+      appointments,
+      total,
+      page: parseInt(page),
+      pages: Math.ceil(total / limit)
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -180,11 +294,11 @@ exports.getDoctorAppointments = async (req, res) => {
 // Update appointment status (doctor / admin)
 exports.updateAppointmentStatus = async (req, res) => {
   try {
-    const { status, notes, diagnosis } = req.body;
-    const validStatuses = ['confirmed', 'completed', 'cancelled', 'rescheduled'];
+    const { status, notes, diagnosis, date, time } = req.body;
+    const validStatuses = ['booked', 'confirmed', 'completed', 'cancelled', 'rescheduled'];
 
     if (status && !validStatuses.includes(status)) {
-      return res.status(400).json({ message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
+      return res.status(400).json({ message: `Invalid status.` });
     }
 
     const appointment = await Appointment.findById(req.params.id);
@@ -194,43 +308,38 @@ exports.updateAppointmentStatus = async (req, res) => {
     }
 
     // Verify ownership
-    const isDoctor = appointment.doctor.toString() === req.user._id.toString();
+    const doctorProfile = await Doctor.findOne({ user: req.user._id });
+    const isDoctor = doctorProfile && appointment.doctor.toString() === doctorProfile._id.toString();
     const isAdmin = req.user.role === 'admin';
     
     if (!isDoctor && !isAdmin) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    // Prevent invalid transitions
-    if (status && appointment.status === 'completed' && status !== 'completed') {
-      return res.status(400).json({ message: 'Cannot change status of a completed appointment' });
-    }
-
-    if (status && appointment.status === 'cancelled' && status !== 'cancelled') {
-      return res.status(400).json({ message: 'Cannot change status of a cancelled appointment' });
-    }
-
+    if (date) appointment.date = date;
+    if (time) appointment.time = time;
     if (status) appointment.status = status;
     if (notes) appointment.notes = notes;
     if (diagnosis) appointment.diagnosis = diagnosis;
 
     await appointment.save();
 
+    // Re-fetch populated appointment for response
     const populated = await Appointment.findById(appointment._id)
-      .populate({
-        path: 'doctor',
-        populate: { path: 'user', select: 'name email' },
-      })
-      .populate('patient', 'name email');
+      .populate({ path: 'doctor', populate: { path: 'user', select: 'name email' } })
+      .populate({ path: 'patient', populate: { path: 'user', select: 'name email' } });
 
-    // Notify patient about status change
-    await createNotification({
-      recipient: appointment.patient,
-      type: 'appointment',
-      title: 'Appointment Updated',
-      message: `Your appointment status has been updated.`,
-      data: { appointmentId: appointment._id }
-    });
+    // Notify patient
+    const targetPatient = await Patient.findById(appointment.patient);
+    if (targetPatient) {
+      await createNotification({
+        recipient: targetPatient.user,
+        type: 'appointment',
+        title: 'Appointment Updated',
+        message: `Your appointment status has been updated to ${status}.`,
+        data: { appointmentId: appointment._id }
+      });
+    }
 
     res.json({ message: `Appointment updated successfully`, appointment: populated });
   } catch (error) {
@@ -242,6 +351,7 @@ exports.updateAppointmentStatus = async (req, res) => {
 exports.rescheduleAppointment = async (req, res) => {
   try {
     const { date, time, reason } = req.body;
+    console.log('Reschedule Request:', { id: req.params.id, date, time, reason });
 
     if (!date || !time) {
       return res.status(400).json({ message: 'New date and time are required' });
@@ -253,20 +363,18 @@ exports.rescheduleAppointment = async (req, res) => {
       return res.status(404).json({ message: 'Appointment not found' });
     }
 
-    // Only patient who owns it, or doctor/admin, can reschedule
-    const isPatient = appointment.patient.toString() === req.user._id.toString();
-    const isDoctor = appointment.doctor.toString() === req.user._id.toString();
+    const patientProfile = await Patient.findOne({ user: req.user._id });
+    const doctorProfile = await Doctor.findOne({ user: req.user._id });
     const isAdmin = req.user.role === 'admin';
+    
+    const isPatient = patientProfile && appointment.patient.toString() === patientProfile._id.toString();
+    const isDoctor = doctorProfile && appointment.doctor.toString() === doctorProfile._id.toString();
     
     if (!isPatient && !isDoctor && !isAdmin) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    if (appointment.status === 'completed' || appointment.status === 'cancelled') {
-      return res.status(400).json({ message: 'Cannot reschedule a completed or cancelled appointment' });
-    }
-
-    // Check for slot conflict with new time
+    // Check conflict
     const conflict = await Appointment.findOne({
       _id: { $ne: appointment._id },
       doctor: appointment.doctor,
@@ -279,29 +387,44 @@ exports.rescheduleAppointment = async (req, res) => {
       return res.status(400).json({ message: 'The new time slot is already booked' });
     }
 
-    appointment.date = date;
-    appointment.time = time;
-    if (reason) appointment.rescheduleReason = reason;
-    appointment.status = 'rescheduled';
-    await appointment.save();
-
-    const populated = await Appointment.findById(appointment._id)
-      .populate({
-        path: 'doctor',
-        populate: { path: 'user', select: 'name email' },
-      })
-      .populate('patient', 'name email');
-
-    const recipient = isPatient ? appointment.doctor : appointment.patient;
-    await createNotification({
-      recipient,
-      type: 'appointment',
-      title: 'Appointment Rescheduled',
-      message: `Appointment rescheduled to ${appointment.date} at ${appointment.time}.`,
-      data: { appointmentId: appointment._id }
+    const updated = await Appointment.findByIdAndUpdate(
+      req.params.id,
+      { 
+        date, 
+        time, 
+        status: 'rescheduled',
+        ...(reason && { rescheduleReason: reason })
+      },
+      { new: true }
+    ).populate({
+      path: 'doctor',
+      populate: { path: 'user', select: 'name email' },
+    }).populate({
+      path: 'patient',
+      populate: { path: 'user', select: 'name email' },
     });
 
-    res.json({ message: 'Appointment rescheduled successfully', appointment: populated });
+    // Notify other party
+    let recipientUser;
+    if (isPatient) {
+      const d = await Doctor.findById(updated.doctor);
+      recipientUser = d?.user;
+    } else {
+      const p = await Patient.findById(updated.patient);
+      recipientUser = p?.user;
+    }
+
+    if (recipientUser) {
+      await createNotification({
+        recipient: recipientUser,
+        type: 'appointment',
+        title: 'Appointment Rescheduled',
+        message: `Appointment rescheduled to ${date} at ${time}.`,
+        data: { appointmentId: updated._id }
+      });
+    }
+
+    res.json({ message: 'Appointment rescheduled successfully', appointment: updated });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -315,7 +438,10 @@ exports.getAllAppointments = async (req, res) => {
         path: 'doctor',
         populate: { path: 'user', select: 'name email' },
       })
-      .populate('patient', 'name email')
+      .populate({
+        path: 'patient',
+        populate: { path: 'user', select: 'name email' },
+      })
       .sort({ createdAt: -1 });
 
     res.json(appointments);

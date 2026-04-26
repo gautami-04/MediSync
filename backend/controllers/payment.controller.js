@@ -52,6 +52,7 @@ const createPayment = async (req, res) => {
       }
 
       payload.appointment = appointment._id;
+      payload.doctor = appointment.doctor?._id || appointment.doctor;
       payload.doctorName = doctorName || appointment.doctor?.name || '';
       payload.specialty = specialty || (appointment.doctor?.specialization || '');
     } else {
@@ -69,9 +70,33 @@ const createPayment = async (req, res) => {
 // Get payments for the authenticated user / patient
 const getMyPayments = async (req, res) => {
   try {
-    const payments = await Payment.find({ $or: [{ patient: req.user._id }, { user: req.user._id }] })
+    let query = { $or: [{ patient: req.user._id }, { user: req.user._id }] };
+
+    if (req.user.role === 'doctor') {
+      const doctorModel = require('../models/doctor.model');
+      const appointmentModel = require('../models/appointment.model');
+      const doctorProfile = await doctorModel.findOne({ user: req.user._id });
+      
+      if (doctorProfile) {
+        // Include payments directly linked to doctor OR linked via appointments
+        const doctorAppointments = await appointmentModel.find({ doctor: doctorProfile._id }).distinct('_id');
+        query = { 
+          $or: [
+            { doctor: doctorProfile._id }, 
+            { appointment: { $in: doctorAppointments } }
+          ] 
+        };
+      }
+    }
+
+    const payments = await Payment.find(query)
+      .populate('patient', 'user')
+      .populate({
+        path: 'patient',
+        populate: { path: 'user', select: 'name email' }
+      })
       .sort({ createdAt: -1 })
-      .limit(50)
+      .limit(100)
       .lean();
 
     return res.status(200).json(payments);

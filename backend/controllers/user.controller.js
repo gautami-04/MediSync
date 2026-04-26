@@ -30,4 +30,23 @@ const updateMe = async (req, res) => {
   }
 };
 
-module.exports = { getMe, updateMe };
+const uploadProfilePicture = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const user = await User.findById(req.user._id);
+    user.profilePicture = `/uploads/${req.file.filename}`;
+    await user.save();
+
+    res.json({
+      message: 'Profile picture updated',
+      profilePicture: user.profilePicture
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getMe, updateMe, uploadProfilePicture };

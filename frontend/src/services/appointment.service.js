@@ -1,7 +1,7 @@
 import api from "./api";
 
-export const getMyAppointments = async () => {
-	const response = await api.get("/api/appointments/my");
+export const getMyAppointments = async (params) => {
+	const response = await api.get("/api/appointments/my", { params });
 	return response.data;
 };
 
@@ -20,13 +20,13 @@ export const rescheduleAppointment = async (appointmentId, data) => {
 	return response.data;
 };
 
-export const getDoctorAppointments = async () => {
-	const response = await api.get("/api/appointments/doctor");
+export const getDoctorAppointments = async (params) => {
+	const response = await api.get("/api/appointments/doctor", { params });
 	return response.data;
 };
 
-export const getAllAppointments = async () => {
-	const response = await api.get("/api/appointments/all");
+export const getAllAppointments = async (params) => {
+	const response = await api.get("/api/appointments/all", { params });
 	return response.data;
 };
 

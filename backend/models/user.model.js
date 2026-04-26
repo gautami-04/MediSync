@@ -16,6 +16,8 @@ const userSchema = new mongoose.Schema(
     otpAttempts: { type: Number, default: 0 },
     passwordResetOtpVerifiedUntil: { type: Date, default: null },
     isEmailVerified: { type: Boolean, default: false },
+    profilePicture: { type: String, default: '' },
+    savedDoctors: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Doctor' }],
   },
   { timestamps: true }
 );

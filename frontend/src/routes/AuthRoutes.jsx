@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, Outlet } from "react-router-dom";
+import { Navigate, Route, Routes, Outlet, useLocation } from "react-router-dom";
 import ProtectedRoute from "../components/ProtectedRoute";
 import useAuth from "../hooks/useAuth";
 import DashboardLayout from "../components/DashboardLayout";
@@ -41,8 +41,9 @@ import Notifications from "../pages/doctor/Notifications";
  * preventing UI 'trapping' and ensuring a consistent sidebar experience.
  */
 const DashboardWrapper = () => {
+  const { pathname } = useLocation();
   return (
-    <DashboardLayout>
+    <DashboardLayout activePath={pathname}>
       <Outlet />
     </DashboardLayout>
   );

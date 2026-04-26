@@ -147,53 +147,62 @@ const DoctorAppointments = () => {
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {appointments.map((a) => (
-                <div key={a._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', border: '1px solid #dcf1e7', borderRadius: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <img src={`https://ui-avatars.com/api/?name=${(a.patient?.user?.name || 'P').replace(' ', '+')}&background=random`} alt={a.patient?.user?.name} style={{ width: '48px', height: '48px', borderRadius: '50%' }} />
+                <div key={a._id} className={styles.appointmentItem}>
+                  <div className={styles.patientInfo}>
+                    <img 
+                      src={a.patient?.user?.profilePicture ? `http://localhost:5000${a.patient.user.profilePicture}` : `https://ui-avatars.com/api/?name=${(a.patient?.user?.name || 'P').replace(' ', '+')}&background=random`} 
+                      alt={a.patient?.user?.name} 
+                      className={styles.patientAvatar} 
+                    />
                     <div>
-                      <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1.1rem' }}>{a.patient?.user?.name || 'Unknown Patient'}</div>
-                      <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '4px' }}>Date: {a.date} | Time: {a.time}</div>
+                      <div className={styles.patientNameText}>{a.patient?.user?.name || 'Unknown Patient'}</div>
+                      <div className={styles.appointmentMeta}>Date: {a.date} | Time: {a.time}</div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 700, padding: '6px 12px', borderRadius: '99px', background: a.status === 'booked' ? '#dcf1e7' : '#f1f5f9', color: a.status === 'booked' ? '#1b6348' : '#64748b', textTransform: 'uppercase' }}>
+                  
+                  <div className={styles.actionsWrap}>
+                    <span className={`${styles.statusBadge} ${a.status === 'booked' ? styles.statusBooked : styles.statusOther}`}>
                       {a.status}
                     </span>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button 
-                          onClick={() => openRecords(a.patient)}
-                          style={{ background: '#f1f5f9', color: '#475569', border: 'none', padding: '8px 16px', borderRadius: '99px', fontWeight: 700, cursor: 'pointer' }}
-                        >
-                          View Records
-                        </button>
-                        {a.status === 'booked' && (
-                          <>
-                            <button 
-                              onClick={() => handleUpdateStatus(a._id, 'confirmed')} 
-                              style={{ background: '#dcf1e7', color: '#1b6348', border: 'none', padding: '8px 16px', borderRadius: '99px', fontWeight: 700, cursor: 'pointer' }}
-                            >
-                              Accept
-                            </button>
-                            <button 
-                              onClick={() => handleUpdateStatus(a._id, 'cancelled')} 
-                              style={{ background: '#fee2e2', color: '#991b1b', border: 'none', padding: '8px 16px', borderRadius: '99px', fontWeight: 700, cursor: 'pointer' }}
-                            >
-                              Reject
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    <button onClick={() => openReschedule(a)} style={{ background: 'white', color: 'var(--brand-primary)', border: '1px solid var(--brand-primary)', padding: '10px 20px', borderRadius: '99px', fontWeight: 600, cursor: 'pointer' }}>
-                      Reschedule
-                    </button>
-                    {a.status === 'confirmed' && (
+                    
+                    <div className={styles.buttonGroup}>
                       <button 
-                        onClick={() => setPrescriptionModal({ isOpen: true, appointmentId: a._id, patientId: a.patient?._id, medications: [{ name: '', dosage: '', duration: '' }], advice: '' })}
-                        style={{ background: 'var(--brand-primary)', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '99px', fontWeight: 600, cursor: 'pointer' }}
+                        onClick={() => openRecords(a.patient)}
+                        className={styles.secondaryBtn}
                       >
-                        Prescribe
+                        Records
                       </button>
-                    )}
+                      
+                      {a.status === 'booked' && (
+                        <>
+                          <button 
+                            onClick={() => handleUpdateStatus(a._id, 'confirmed')} 
+                            className={styles.successBtn}
+                          >
+                            Accept
+                          </button>
+                          <button 
+                            onClick={() => handleUpdateStatus(a._id, 'cancelled')} 
+                            className={styles.dangerBtn}
+                          >
+                            Reject
+                          </button>
+                        </>
+                      )}
+                      
+                      <button onClick={() => openReschedule(a)} className={styles.outlineBtn}>
+                        Reschedule
+                      </button>
+                      
+                      {a.status === 'confirmed' && (
+                        <button 
+                          onClick={() => setPrescriptionModal({ isOpen: true, appointmentId: a._id, patientId: a.patient?._id, medications: [{ name: '', dosage: '', duration: '' }], advice: '' })}
+                          className={styles.primaryBtn}
+                        >
+                          Prescribe
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

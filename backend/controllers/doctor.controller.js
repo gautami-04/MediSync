@@ -30,7 +30,7 @@ const getAllDoctors = async (req, res) => {
 			];
 		}
 
-		const doctors = await Doctor.find(query).populate('user', 'name email role');
+		const doctors = await Doctor.find(query).populate('user', 'name email role profilePicture');
 		res.json(doctors);
 	} catch (error) {
 		res.status(500).json({ message: error.message });
@@ -39,7 +39,7 @@ const getAllDoctors = async (req, res) => {
 
 const getDoctorById = async (req, res) => {
 	try {
-		const doctor = await Doctor.findById(req.params.id).populate('user', 'name email role');
+		const doctor = await Doctor.findById(req.params.id).populate('user', 'name email role profilePicture');
 
 		if (!doctor || !doctor.isApproved) {
 			return res.status(404).json({ message: 'Doctor not found or not approved' });
@@ -53,7 +53,7 @@ const getDoctorById = async (req, res) => {
 
 const getMyDoctorProfile = async (req, res) => {
 	try {
-		let doctor = await Doctor.findOne({ user: req.user._id }).populate('user', 'name email role');
+		let doctor = await Doctor.findOne({ user: req.user._id }).populate('user', 'name email role profilePicture');
 
 		if (!doctor) {
 			// Auto-create basic profile for newly registered doctors
@@ -62,7 +62,7 @@ const getMyDoctorProfile = async (req, res) => {
 				specialization: 'General Practice',
 				isApproved: false // Still needs admin approval
 			});
-			doctor = await doctor.populate('user', 'name email role');
+			doctor = await doctor.populate('user', 'name email role profilePicture');
 		}
 
 		res.json(doctor);
@@ -113,7 +113,7 @@ const upsertDoctorProfile = async (req, res) => {
 				runValidators: true,
 				setDefaultsOnInsert: true,
 			}
-		).populate('user', 'name email role');
+		).populate('user', 'name email role profilePicture');
 
 		res.status(200).json(doctor);
 	} catch (error) {

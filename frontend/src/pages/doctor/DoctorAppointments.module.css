@@ -124,12 +124,93 @@
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   transition: var(--transition-all);
+  background: white;
+  gap: 20px;
 }
 
 .appointmentItem:hover {
   border-color: var(--brand-primary);
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
+}
+
+.patientInfo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.patientAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.patientNameText {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+}
+
+.appointmentMeta {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.actionsWrap {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.statusBadge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 99px;
+  text-transform: uppercase;
+}
+
+.statusBooked { background: #dcf1e7; color: #1b6348; }
+.statusOther { background: #f1f5f9; color: #64748b; }
+
+.primaryBtn, .secondaryBtn, .successBtn, .dangerBtn, .outlineBtn {
+  border: none;
+  padding: 8px 16px;
+  border-radius: 99px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  font-size: 0.9rem;
+}
+
+.primaryBtn { background: var(--brand-primary); color: white; }
+.secondaryBtn { background: #f1f5f9; color: #475569; }
+.successBtn { background: #dcf1e7; color: #1b6348; }
+.dangerBtn { background: #fee2e2; color: #991b1b; }
+.outlineBtn { background: white; color: var(--brand-primary); border: 1px solid var(--brand-primary); }
+
+.primaryBtn:hover { opacity: 0.9; transform: translateY(-1px); }
+.secondaryBtn:hover { background: #e2e8f0; }
+
+@media (max-width: 1024px) {
+  .appointmentItem {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .actionsWrap {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
 }
 
 .rescheduleModal {
@@ -141,6 +222,8 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 20px;
+  overflow-y: auto;
 }
 
 .modalContent {
@@ -150,6 +233,7 @@
   width: 100%;
   max-width: 500px;
   box-shadow: var(--shadow-xl);
+  margin: auto;
 }
 
 .modalTitle {

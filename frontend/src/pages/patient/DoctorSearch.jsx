@@ -134,7 +134,15 @@ const DoctorSearch = () => {
                 
                 <div className={styles.doctorHeader}>
                   <div className={styles.avatar}>
-                    {(doc.user?.name || doc.name || 'D').charAt(0)}
+                    {doc.user?.profilePicture ? (
+                      <img 
+                        src={`http://localhost:5000${doc.user.profilePicture}`} 
+                        alt={doc.user?.name} 
+                        style={{ width: '100%', height: '100%', borderRadius: '20px', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      (doc.user?.name || doc.name || 'D').charAt(0)
+                    )}
                   </div>
                   <div className={styles.doctorInfo}>
                     <h3>{doc.user?.name || doc.name}</h3>

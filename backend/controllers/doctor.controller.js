@@ -1,8 +1,36 @@
 const Doctor = require('../models/doctor.model');
+const Appointment = require('../models/appointment.model');
+const Payment = require('../models/payment.model');
+const PendingUser = require('../models/pendingUser.model');
+const Review = require('../models/review.model');
+const User = require('../models/user.model');
+const mongoose = require('mongoose');
 
 const getAllDoctors = async (req, res) => {
 	try {
-		const doctors = await Doctor.find().populate('user', 'name email role');
+		const { specialization, hospital, minFee, maxFee, search } = req.query;
+		let query = { isApproved: true };
+
+		if (specialization) {
+			query.specialization = { $regex: specialization, $options: 'i' };
+		}
+		if (hospital) {
+			query.hospital = { $regex: hospital, $options: 'i' };
+		}
+		if (minFee || maxFee) {
+			query.consultationFee = {};
+			if (minFee) query.consultationFee.$gte = Number(minFee);
+			if (maxFee) query.consultationFee.$lte = Number(maxFee);
+		}
+		if (search) {
+			query.$or = [
+				{ specialization: { $regex: search, $options: 'i' } },
+				{ hospital: { $regex: search, $options: 'i' } },
+				{ bio: { $regex: search, $options: 'i' } },
+			];
+		}
+
+		const doctors = await Doctor.find(query).populate('user', 'name email role');
 		res.json(doctors);
 	} catch (error) {
 		res.status(500).json({ message: error.message });
@@ -13,8 +41,8 @@ const getDoctorById = async (req, res) => {
 	try {
 		const doctor = await Doctor.findById(req.params.id).populate('user', 'name email role');
 
-		if (!doctor) {
-			return res.status(404).json({ message: 'Doctor not found' });
+		if (!doctor || !doctor.isApproved) {
+			return res.status(404).json({ message: 'Doctor not found or not approved' });
 		}
 
 		res.json(doctor);
@@ -25,10 +53,16 @@ const getDoctorById = async (req, res) => {
 
 const getMyDoctorProfile = async (req, res) => {
 	try {
-		const doctor = await Doctor.findOne({ user: req.user._id }).populate('user', 'name email role');
+		let doctor = await Doctor.findOne({ user: req.user._id }).populate('user', 'name email role');
 
 		if (!doctor) {
-			return res.status(404).json({ message: 'Doctor profile not found' });
+			// Auto-create basic profile for newly registered doctors
+			doctor = await Doctor.create({ 
+				user: req.user._id,
+				specialization: 'General Practice',
+				isApproved: false // Still needs admin approval
+			});
+			doctor = await doctor.populate('user', 'name email role');
 		}
 
 		res.json(doctor);
@@ -40,6 +74,7 @@ const getMyDoctorProfile = async (req, res) => {
 const upsertDoctorProfile = async (req, res) => {
 	try {
 		const {
+			name,
 			specialization,
 			qualification,
 			experienceYears,
@@ -51,6 +86,11 @@ const upsertDoctorProfile = async (req, res) => {
 
 		if (!specialization) {
 			return res.status(400).json({ message: 'Specialization is required' });
+		}
+
+		// Update User name if provided
+		if (name) {
+			await User.findByIdAndUpdate(req.user._id, { name });
 		}
 
 		const payload = {
@@ -103,10 +143,187 @@ const deleteDoctorProfile = async (req, res) => {
 	}
 };
 
+const getDoctorStats = async (req, res) => {
+	try {
+		let doctorProfile = await Doctor.findOne({ user: req.user._id });
+
+		if (!doctorProfile) {
+			// Auto-create basic profile
+			doctorProfile = await Doctor.create({ 
+				user: req.user._id,
+				specialization: 'General Practice',
+				isApproved: false
+			});
+		}
+
+		const doctorId = doctorProfile._id;
+		const today = new Date().toLocaleDateString('en-CA');
+
+		const todaysAppointments = await Appointment.countDocuments({ 
+			doctor: doctorId, 
+			date: today,
+			status: { $ne: 'cancelled' }
+		});
+
+		const patients = await Appointment.distinct('patient', { doctor: doctorId });
+		const totalPatients = patients.length;
+
+		const earningsAgg = await Appointment.aggregate([
+			{ $match: { doctor: doctorId, status: { $ne: 'cancelled' } } },
+			{
+				$lookup: {
+					from: 'payments',
+					localField: '_id',
+					foreignField: 'appointment',
+					as: 'payments',
+				},
+			},
+			{ $unwind: '$payments' },
+			{ $match: { 'payments.status': 'paid' } },
+			{ $group: { _id: null, total: { $sum: '$payments.amount' } } },
+		]);
+
+		const totalEarnings = (earningsAgg[0] && earningsAgg[0].total) || 0;
+
+		let pendingApprovals = 0;
+		if (req.user.role === 'admin') {
+			pendingApprovals = await PendingUser.countDocuments();
+		}
+
+		res.json({ todaysAppointments, totalPatients, totalEarnings, pendingApprovals });
+	} catch (error) {
+		res.status(500).json({ message: error.message });
+	}
+};
+
+const getMyReviews = async (req, res) => {
+	try {
+		const page = parseInt(req.query.page) || 1;
+		const limit = parseInt(req.query.limit) || 10;
+		const skip = (page - 1) * limit;
+
+		const total = await Review.countDocuments({ doctor: req.user._id });
+		const reviews = await Review.find({ doctor: req.user._id })
+			.populate('patient', 'name profilePicture')
+			.sort({ createdAt: -1 })
+			.skip(skip)
+			.limit(limit);
+
+		res.json({
+			reviews,
+			total,
+			page,
+			pages: Math.ceil(total / limit)
+		});
+	} catch (error) {
+		res.status(500).json({ message: error.message });
+	}
+};
+
+// Manage Availability Slots
+const addAvailableSlot = async (req, res) => {
+	try {
+		const { day, startTime, endTime } = req.body;
+		const doctorProfile = await Doctor.findOne({ user: req.user._id });
+		if (!doctorProfile) return res.status(404).json({ message: 'Doctor profile not found' });
+		
+		const exists = doctorProfile.availableSlots.find(
+			(s) => s.day === day && s.startTime === startTime && s.endTime === endTime
+		);
+
+		if (exists) {
+			return res.status(400).json({ message: 'This availability slot already exists.' });
+		}
+
+		doctorProfile.availableSlots.push({ day, startTime, endTime });
+		await doctorProfile.save();
+		res.status(201).json(doctorProfile.availableSlots);
+	} catch (error) {
+		res.status(500).json({ message: error.message });
+	}
+};
+
+const deleteAvailableSlot = async (req, res) => {
+	try {
+		const doctorProfile = await Doctor.findOne({ user: req.user._id });
+		if (!doctorProfile) return res.status(404).json({ message: 'Doctor profile not found' });
+
+		doctorProfile.availableSlots = doctorProfile.availableSlots.filter(
+			slot => slot._id.toString() !== req.params.slotId
+		);
+		await doctorProfile.save();
+		res.json(doctorProfile.availableSlots);
+	} catch (error) {
+		res.status(500).json({ message: error.message });
+	}
+};
+
+const getMyPatients = async (req, res) => {
+	try {
+		const doctorProfile = await Doctor.findOne({ user: req.user._id });
+		if (!doctorProfile) return res.status(404).json({ message: 'Doctor profile not found' });
+
+		const page = parseInt(req.query.page) || 1;
+		const limit = parseInt(req.query.limit) || 10;
+		const skip = (page - 1) * limit;
+
+		// Get unique patient IDs from appointments
+		const appointmentModel = require('../models/appointment.model');
+		const patientIds = await appointmentModel.find({ doctor: doctorProfile._id }).distinct('patient');
+
+		const patientModel = require('../models/patient.model');
+		const query = { _id: { $in: patientIds } };
+
+		if (req.query.search) {
+			const userModel = require('../models/user.model');
+			const matchingUsers = await userModel.find({
+				name: { $regex: req.query.search, $options: 'i' }
+			}).distinct('_id');
+			query.user = { $in: matchingUsers };
+		}
+
+		const total = await patientModel.countDocuments(query);
+		const patients = await patientModel.find(query)
+			.populate('user', 'name email profilePicture')
+			.skip(skip)
+			.limit(limit);
+
+		res.json({
+			patients,
+			total,
+			page,
+			pages: Math.ceil(total / limit)
+		});
+	} catch (error) {
+		res.status(500).json({ message: error.message });
+	}
+};
+
+
+
+const getPatientMedicalRecords = async (req, res) => {
+	try {
+		const MedicalRecord = require('../models/medicalRecord.model');
+		const records = await MedicalRecord.find({ patient: req.params.patientId })
+			.populate('doctor', 'user')
+			.populate({ path: 'doctor', populate: { path: 'user', select: 'name' } })
+			.sort({ createdAt: -1 });
+		res.json(records);
+	} catch (error) {
+		res.status(500).json({ message: error.message });
+	}
+};
+
 module.exports = {
 	getAllDoctors,
 	getDoctorById,
 	getMyDoctorProfile,
 	upsertDoctorProfile,
 	deleteDoctorProfile,
+	getDoctorStats,
+	getMyReviews,
+	addAvailableSlot,
+	deleteAvailableSlot,
+	getMyPatients,
+	getPatientMedicalRecords,
 };

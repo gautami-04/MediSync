@@ -1,17 +1,15 @@
 const mongoose = require('mongoose');
 
-const slotSchema = new mongoose.Schema(
-	{
-		day: {
-			type: String,
-			enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-			required: true,
-		},
-		from: { type: String, required: true },
-		to: { type: String, required: true },
-	},
-	{ _id: false }
-);
+const slotSchema = new mongoose.Schema({
+  day: { 
+    type: String, 
+    enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    required: true 
+  },
+  startTime: { type: String, required: true }, // e.g. "09:00"
+  endTime: { type: String, required: true },   // e.g. "10:00"
+  isBooked: { type: Boolean, default: false }
+}, { _id: true }); // Keep _id so Gautami can reference specific slots easily
 
 const doctorSchema = new mongoose.Schema(
 	{
@@ -21,13 +19,21 @@ const doctorSchema = new mongoose.Schema(
 			required: true,
 			unique: true,
 		},
-		specialization: { type: String, required: true, trim: true },
-		qualification: { type: String, trim: true },
-		experienceYears: { type: Number, min: 0, default: 0 },
-		consultationFee: { type: Number, min: 0, default: 0 },
-		hospital: { type: String, trim: true },
-		bio: { type: String, trim: true },
-		availableSlots: [slotSchema],
+		specialization: { type: String, required: true, default: 'General Practice' },
+		qualification: { type: String },
+		experienceYears: { type: Number, default: 0 },
+		consultationFee: { type: Number, default: 0 },
+		hospital: { type: String },
+		address: {
+			street: String,
+			city: String,
+			state: String,
+			zipCode: String
+		},
+		bio: String,
+		availableSlots: [slotSchema], // Using the named schema here
+		isApproved: { type: Boolean, default: false },
+		approvedAt: Date,
 	},
 	{ timestamps: true }
 );

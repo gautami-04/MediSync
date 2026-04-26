@@ -71,7 +71,7 @@ const getOrCreatePatient = async (userId) => {
 	const patient = await Patient.findOneAndUpdate(
 		{ user: userId },
 		{ $setOnInsert: { user: userId } },
-		{ new: true, upsert: true, setDefaultsOnInsert: true }
+		{ returnDocument: 'after', upsert: true, setDefaultsOnInsert: true }
 	);
 
 	return patient;
@@ -167,7 +167,7 @@ const upsertPatientProfile = async (req, res) => {
 		const patient = await Patient.findOneAndUpdate(
 			{ user: req.user._id },
 			{ $set: updateData, $setOnInsert: { user: req.user._id } },
-			{ new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+			{ returnDocument: 'after', upsert: true, runValidators: true, setDefaultsOnInsert: true }
 		).populate('user', 'name email');
 
 		return res.status(200).json({ message: 'Patient profile updated', patient });

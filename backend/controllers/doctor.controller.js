@@ -30,7 +30,9 @@ const getAllDoctors = async (req, res) => {
 			];
 		}
 
-		const doctors = await Doctor.find(query).populate('user', 'name email role profilePicture');
+		const doctors = await Doctor.find(query)
+			.populate('user', 'name email role profilePicture')
+			.lean();
 		res.json(doctors);
 	} catch (error) {
 		res.status(500).json({ message: error.message });
@@ -108,7 +110,7 @@ const upsertDoctorProfile = async (req, res) => {
 			{ user: req.user._id },
 			payload,
 			{
-				new: true,
+				returnDocument: 'after',
 				upsert: true,
 				runValidators: true,
 				setDefaultsOnInsert: true,
@@ -223,21 +225,47 @@ const getMyReviews = async (req, res) => {
 // Manage Availability Slots
 const addAvailableSlot = async (req, res) => {
 	try {
-		const { day, startTime, endTime } = req.body;
-		const doctorProfile = await Doctor.findOne({ user: req.user._id });
-		if (!doctorProfile) return res.status(404).json({ message: 'Doctor profile not found' });
-		
-		const exists = doctorProfile.availableSlots.find(
-			(s) => s.day === day && s.startTime === startTime && s.endTime === endTime
-		);
+    const { day, startTime, endTime } = req.body;
+    const doctorProfile = await Doctor.findOne({ user: req.user._id });
+    if (!doctorProfile) return res.status(404).json({ message: 'Doctor profile not found' });
+    
+    // Function to generate 15-min slots
+    const generateSlots = (start, end) => {
+      const slots = [];
+      let current = new Date(`2000-01-01T${start}:00`);
+      const stop = new Date(`2000-01-01T${end}:00`);
+      
+      while (current < stop) {
+        const next = new Date(current.getTime() + 15 * 60000);
+        if (next > stop) break;
+        
+        const sTime = current.toTimeString().substring(0, 5);
+        const eTime = next.toTimeString().substring(0, 5);
+        
+        slots.push({ day, startTime: sTime, endTime: eTime });
+        current = next;
+      }
+      return slots;
+    };
 
-		if (exists) {
-			return res.status(400).json({ message: 'This availability slot already exists.' });
-		}
+    const newSlots = generateSlots(startTime, endTime);
+    
+    if (newSlots.length === 0) {
+      return res.status(400).json({ message: 'Invalid time range for slots.' });
+    }
 
-		doctorProfile.availableSlots.push({ day, startTime, endTime });
-		await doctorProfile.save();
-		res.status(201).json(doctorProfile.availableSlots);
+    // Filter out duplicates
+    const filteredNewSlots = newSlots.filter(ns => 
+      !doctorProfile.availableSlots.some(s => s.day === ns.day && s.startTime === ns.startTime)
+    );
+
+    if (filteredNewSlots.length === 0) {
+      return res.status(400).json({ message: 'All slots in this range already exist.' });
+    }
+
+    doctorProfile.availableSlots.push(...filteredNewSlots);
+    await doctorProfile.save();
+    res.status(201).json(doctorProfile.availableSlots);
 	} catch (error) {
 		res.status(500).json({ message: error.message });
 	}
@@ -314,6 +342,41 @@ const getPatientMedicalRecords = async (req, res) => {
 	}
 };
 
+const getAvailableSlotsByDate = async (req, res) => {
+	try {
+		const { doctorId } = req.params;
+		const { date } = req.query; // YYYY-MM-DD
+
+		if (!date) return res.status(400).json({ message: 'Date is required' });
+
+		const doctor = await Doctor.findById(doctorId);
+		if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
+
+		const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+		const d = new Date(date);
+		const dayOfWeek = days[d.getDay()];
+
+		// Filter slots for that day
+		const daySlots = doctor.availableSlots.filter(s => s.day === dayOfWeek);
+
+		// Get already booked appointments for this doctor on this date
+		const bookedAppointments = await Appointment.find({
+			doctor: doctorId,
+			date,
+			status: { $nin: ['cancelled'] }
+		}).select('time');
+
+		const bookedTimes = bookedAppointments.map(a => a.time);
+
+		// Filter out booked slots
+		const availableSlots = daySlots.filter(s => !bookedTimes.includes(s.startTime));
+
+		res.json(availableSlots);
+	} catch (error) {
+		res.status(500).json({ message: error.message });
+	}
+};
+
 module.exports = {
 	getAllDoctors,
 	getDoctorById,
@@ -326,4 +389,5 @@ module.exports = {
 	deleteAvailableSlot,
 	getMyPatients,
 	getPatientMedicalRecords,
+	getAvailableSlotsByDate,
 };

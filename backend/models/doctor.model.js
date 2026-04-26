@@ -19,11 +19,11 @@ const doctorSchema = new mongoose.Schema(
 			required: true,
 			unique: true,
 		},
-		specialization: { type: String, required: true, default: 'General Practice' },
+		specialization: { type: String, required: true, default: 'General Practice', index: true },
 		qualification: { type: String },
 		experienceYears: { type: Number, default: 0 },
 		consultationFee: { type: Number, default: 0 },
-		hospital: { type: String },
+		hospital: { type: String, index: true },
 		address: {
 			street: String,
 			city: String,
@@ -32,7 +32,7 @@ const doctorSchema = new mongoose.Schema(
 		},
 		bio: String,
 		availableSlots: [slotSchema], // Using the named schema here
-		isApproved: { type: Boolean, default: false },
+		isApproved: { type: Boolean, default: false, index: true },
 		approvedAt: Date,
 	},
 	{ timestamps: true }

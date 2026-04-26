@@ -2,6 +2,7 @@ const Appointment = require('../models/appointment.model');
 const Doctor = require('../models/doctor.model');
 const Patient = require('../models/patient.model');
 const Payment = require('../models/payment.model');
+const User = require('../models/user.model');
 const { createNotification } = require('../services/notification.service');
 const crypto = require('crypto');
 
@@ -146,7 +147,8 @@ exports.getMyAppointments = async (req, res) => {
         })
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(limit),
+        .limit(limit)
+        .lean(),
       Appointment.countDocuments(query),
       Appointment.aggregate([
         { $match: query },
@@ -204,6 +206,39 @@ exports.cancelAppointment = async (req, res) => {
 
     appointment.status = 'cancelled';
     await appointment.save();
+
+    // Handle Refund for Prepaid Bookings
+    if (appointment.paymentMode === 'prepaid') {
+      const originalPayment = await Payment.findOne({
+        appointment: appointment._id,
+        status: 'paid'
+      });
+
+      if (originalPayment) {
+        // 1. Create Refund Transaction
+        await Payment.create({
+          patient: appointment.patient,
+          doctor: appointment.doctor,
+          appointment: appointment._id,
+          amount: originalPayment.amount,
+          type: 'refund',
+          transactionType: 'credit',
+          status: 'refunded',
+          referenceId: `REF-${crypto.randomBytes(4).toString('hex').toUpperCase()}`,
+          paidAt: new Date(),
+          notes: `Refund for cancelled appointment on ${appointment.date}`
+        });
+
+        // 2. Update Patient's Wallet Balance
+        // Find the user associated with the patient profile
+        const pProfile = await Patient.findById(appointment.patient);
+        if (pProfile) {
+          await User.findByIdAndUpdate(pProfile.user, {
+            $inc: { walletBalance: originalPayment.amount }
+          });
+        }
+      }
+    }
 
     const populated = await Appointment.findById(appointment._id)
       .populate({
@@ -298,7 +333,8 @@ exports.getDoctorAppointments = async (req, res) => {
       })
       .sort({ date: 1, time: 1 })
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit))
+      .lean();
 
     res.json({
       appointments,
@@ -415,7 +451,7 @@ exports.rescheduleAppointment = async (req, res) => {
         status: 'rescheduled',
         ...(reason && { rescheduleReason: reason })
       },
-      { new: true }
+      { returnDocument: 'after' }
     ).populate({
       path: 'doctor',
       populate: { path: 'user', select: 'name email' },

@@ -113,7 +113,7 @@ const MedicalRecords = () => {
                           <FiCalendar size={14} /> {new Date(record.createdAt).toLocaleDateString()}
                         </span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <FiUser size={14} /> {record.doctor?.user?.name || 'Dr. Practitioner'}
+                          <FiUser size={14} /> {record.doctor?.user?.name || ''}
                         </span>
                       </div>
                     </div>

@@ -22,6 +22,16 @@ const paymentSchema = new mongoose.Schema(
     specialty: { type: String, trim: true, default: '' },
     amount: { type: Number, required: true, min: 0, default: 0 },
     currency: { type: String, default: 'INR' },
+    type: {
+      type: String,
+      enum: ['payment', 'refund'],
+      default: 'payment'
+    },
+    transactionType: {
+      type: String,
+      enum: ['debit', 'credit'],
+      default: 'debit'
+    },
     method: {
       type: String,
       enum: ['card', 'bank', 'cash', 'upi', 'other'],

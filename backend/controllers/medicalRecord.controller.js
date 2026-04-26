@@ -352,7 +352,7 @@ const patientUploadRecord = async (req, res) => {
 		const patient = await Patient.findOneAndUpdate(
 			{ user: req.user._id },
 			{ $setOnInsert: { user: req.user._id } },
-			{ new: true, upsert: true, setDefaultsOnInsert: true }
+			{ returnDocument: 'after', upsert: true, setDefaultsOnInsert: true }
 		);
 
 		if (!patient) {

@@ -14,10 +14,12 @@ const formatDate = (value) => {
 	if (!value) return "-";
 	const date = new Date(value);
 	if (Number.isNaN(date.getTime())) return String(value);
-	return date.toLocaleDateString(undefined, {
+	return date.toLocaleString(undefined, {
 		year: "numeric",
 		month: "short",
 		day: "2-digit",
+		hour: "2-digit",
+		minute: "2-digit",
 	});
 };
 
@@ -32,6 +34,7 @@ const STATUS_CLASS = {
 	paid: styles.statusPaid,
 	pending: styles.statusPending,
 	failed: styles.statusFailed,
+	refunded: styles.statusRefunded,
 };
 
 // ─── Payment Detail Modal ──────────────────────────────────────────────────────
@@ -281,6 +284,17 @@ const Payments = () => {
 						<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><circle cx="12" cy="13" r="2" /><path d="M12 15v2" /></svg>
 					</div>
 				</div>
+
+				{!isAdmin && (
+					<div className={styles.summaryCard} style={{ border: '2px solid var(--brand-primary)' }}>
+						<div className={styles.summaryLabel}>WALLET BALANCE</div>
+						<div className={styles.summaryValue} style={{ color: 'var(--brand-primary)' }}>{formatCurrency(user?.walletBalance || 0)}</div>
+						<div className={styles.summarySub}>Available for future bookings</div>
+						<div className={styles.iconWrapper} style={{ background: '#dcf1e7', color: 'var(--brand-primary)' }}>
+							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4" /><path d="M4 6v12c0 1.1.9 2 2 2h14v-4" /><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z" /></svg>
+						</div>
+					</div>
+				)}
 			</div>
 
 			<div className={styles.tableSection}>
@@ -294,6 +308,7 @@ const Payments = () => {
 						<tr>
 							<th>DATE</th>
 							<th>{isDoctor ? "PATIENT & SERVICE" : "DOCTOR & SPECIALTY"}</th>
+							<th>TYPE</th>
 							<th>AMOUNT</th>
 							<th>PAYMENT METHOD</th>
 							<th>STATUS</th>
@@ -338,7 +353,24 @@ const Payments = () => {
 										</div>
 									</div>
 								</td>
-								<td><div className={styles.amount}>{formatCurrency(payment.amount)}</div></td>
+								<td>
+									<span style={{ 
+										fontSize: '0.75rem', 
+										fontWeight: 700, 
+										padding: '4px 8px', 
+										borderRadius: '4px',
+										background: payment.transactionType === 'credit' ? '#dcf1e7' : '#f1f5f9',
+										color: payment.transactionType === 'credit' ? '#15803d' : '#64748b',
+										textTransform: 'uppercase'
+									}}>
+										{payment.type === 'refund' ? 'REFUND' : (payment.transactionType || 'debit')}
+									</span>
+								</td>
+								<td>
+									<div className={styles.amount} style={{ color: payment.transactionType === 'credit' ? '#15803d' : 'inherit' }}>
+										{payment.transactionType === 'credit' ? '+' : '-'}{formatCurrency(payment.amount)}
+									</div>
+								</td>
 								<td>
 									<div className={styles.methodCell}>
 										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></svg>

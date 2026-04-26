@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ['patient', 'doctor', 'admin'],
       default: 'patient',
+      index: true,
     },
     otp: { type: String, default: null },
     otpExpiresAt: { type: Date, default: null },
@@ -18,6 +19,7 @@ const userSchema = new mongoose.Schema(
     isEmailVerified: { type: Boolean, default: false },
     profilePicture: { type: String, default: '' },
     savedDoctors: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Doctor' }],
+    walletBalance: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

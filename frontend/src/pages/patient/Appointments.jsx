@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import DashboardLayout from "../../components/DashboardLayout";
 import { getMyAppointments, bookAppointment, cancelAppointment, rescheduleAppointment } from "../../services/appointment.service";
-import { getAllDoctors } from "../../services/doctor.service";
+import { getAllDoctors, getAvailableSlotsByDate } from "../../services/doctor.service";
 import styles from "./Appointments.module.css";
 import { useLocation } from "react-router-dom";
 import Pagination from "../../components/Pagination";
@@ -51,6 +51,8 @@ const PatientAppointments = () => {
 	const [showPaymentModal, setShowPaymentModal] = useState(false);
 	const [paymentProcessing, setPaymentProcessing] = useState(false);
 	const [selectedSlot, setSelectedSlot] = useState(null);
+	const [dynamicSlots, setDynamicSlots] = useState([]);
+	const [loadingSlots, setLoadingSlots] = useState(false);
 
 	const getDayOfWeek = (dateString) => {
 		const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -63,11 +65,28 @@ const PatientAppointments = () => {
 		return doctors.find((d) => d._id === formData.doctorId) || null;
 	}, [formData.doctorId, doctors]);
 
-	const filteredSlots = useMemo(() => {
-		if (!selectedDoctor || !formData.date) return [];
-		const selectedDay = getDayOfWeek(formData.date);
-		return selectedDoctor.availableSlots?.filter(slot => slot.day === selectedDay && !slot.isBooked) || [];
-	}, [selectedDoctor, formData.date]);
+	const filteredSlots = dynamicSlots;
+
+	useEffect(() => {
+		const fetchSlots = async () => {
+			if (!formData.doctorId || !formData.date) {
+				setDynamicSlots([]);
+				return;
+			}
+			setLoadingSlots(true);
+			try {
+				const slots = await getAvailableSlotsByDate(formData.doctorId, formData.date);
+				setDynamicSlots(slots);
+			} catch (err) {
+				console.error("Failed to fetch slots:", err);
+				addToast("Failed to fetch available slots", "error");
+				setDynamicSlots([]);
+			} finally {
+				setLoadingSlots(false);
+			}
+		};
+		fetchSlots();
+	}, [formData.doctorId, formData.date, addToast]);
 
 	// Auto-open modal if navigating from doctor search
 	useEffect(() => {
@@ -417,7 +436,9 @@ const PatientAppointments = () => {
 									<div className={styles.formGroup}>
 										<label className={styles.formLabel}>Available Slots for {getDayOfWeek(formData.date)}</label>
 										<div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
-											{filteredSlots.length > 0 ? (
+											{loadingSlots ? (
+												<p style={{ fontSize: '0.85rem', color: 'var(--brand-primary)' }}>Loading available slots...</p>
+											) : filteredSlots.length > 0 ? (
 												filteredSlots.map((slot) => (
 													<button
 														key={slot._id}

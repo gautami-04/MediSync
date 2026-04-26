@@ -15,9 +15,11 @@ const {
 	deleteAvailableSlot,
 	getMyPatients,
 	getPatientMedicalRecords,
+	getAvailableSlotsByDate,
 } = require('../controllers/doctor.controller');
 
 router.get('/', getAllDoctors);
+router.get('/:doctorId/available-slots', getAvailableSlotsByDate);
 router.get('/profile/me', protect, authorizeRoles('doctor', 'admin'), getMyDoctorProfile);
 router.get('/profile/me/stats', protect, authorizeRoles('doctor', 'admin'), getDoctorStats);
 router.get('/reviews/me', protect, authorizeRoles('doctor'), getMyReviews);

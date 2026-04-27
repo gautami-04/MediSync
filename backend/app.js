@@ -1,8 +1,12 @@
 const express = require('express');
-const cors = require('cors'); // Heartbeat restart
+const cors = require('cors'); 
 const path = require('path');
+const morgan = require('morgan');
+const compression = require('compression'); 
 const authRoutes = require('./routes/auth.routes');
 const app = express();
+app.use(compression());
+app.use(morgan(':method :url :status :response-time ms'));
 const userRoutes = require('./routes/user.routes');
 const appointmentRoutes = require('./routes/appointment.routes');
 const doctorRoutes = require('./routes/doctor.routes');
@@ -37,7 +41,6 @@ app.use('/api/notifications', notificationRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
-// Serve frontend build in production
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '..', 'frontend', 'dist')));
   app.get('*', (req, res) => {

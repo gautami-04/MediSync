@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
+import ConfirmDialog from "../../components/ConfirmDialog";
+
 import DashboardLayout from "../../components/DashboardLayout";
 import { getMyAppointments, bookAppointment, cancelAppointment, rescheduleAppointment } from "../../services/appointment.service";
 import { getAllDoctors, getAvailableSlotsByDate } from "../../services/doctor.service";
@@ -35,6 +37,8 @@ const PatientAppointments = () => {
 	const [doctors, setDoctors] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelTargetId, setCancelTargetId] = useState(null);
 	const [success, setSuccess] = useState("");
 	const [filter, setFilter] = useState("all");
 	const [showBookModal, setShowBookModal] = useState(false);

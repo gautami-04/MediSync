@@ -1,10 +1,16 @@
+require('dotenv').config(); // 🔥 MUST BE FIRST
+
 const app = require('./app');
-const dotenv = require('dotenv');
-const connectDB = require('./config/db'); // 👈 ADD THIS
+const connectDB = require('./config/db');
+const fs = require('fs');
+const path = require('path');
 
-dotenv.config();
+// Ensure uploads directory exists
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
 
-// 👇 CONNECT TO DATABASE
 connectDB();
 
 const PORT = process.env.PORT || 5000;

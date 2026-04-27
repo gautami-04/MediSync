@@ -1,6 +1,7 @@
 .layout {
   display: flex;
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
   overflow: hidden;
   background-color: var(--bg-main);
@@ -16,6 +17,12 @@
   transition: var(--transition-all);
   z-index: 50;
   box-shadow: 10px 0 30px rgba(0, 0, 0, 0.02);
+  overflow-y: auto;
+  scrollbar-width: none; /* Hide scrollbar for cleaner look */
+}
+
+.sidebar::-webkit-scrollbar {
+  display: none;
 }
 
 .brand {
@@ -338,7 +345,7 @@
 
   .sidebar {
     position: fixed;
-    left: -100%;
+    left: -280px;
     top: 0;
     bottom: 0;
     width: 280px;
@@ -349,7 +356,7 @@
   }
 
   .sidebarActive {
-    transform: translateX(100%);
+    transform: translateX(280px);
   }
 
   .brandName, .brandTag, .navItem span, .userInfo, .brandIcon + div {

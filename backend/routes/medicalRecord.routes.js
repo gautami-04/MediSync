@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
+const { uploadCloud } = require('../utils/cloudinary');
 
 const router = express.Router();
 const protect = require('../middleware/auth.middleware');
@@ -45,7 +46,7 @@ const upload = multer({
 router.post('/', protect, authorizeRoles('doctor'), createMedicalRecord);
 
 // Patient Upload Route
-router.post('/upload', protect, authorizeRoles('patient'), upload.single('file'), patientUploadRecord);
+router.post('/upload', protect, authorizeRoles('patient'), uploadCloud.single('file'), patientUploadRecord);
 
 router.get('/my', protect, authorizeRoles('patient'), getMyMedicalRecords);
 router.get('/doctor', protect, authorizeRoles('doctor'), getDoctorPatientRecords);

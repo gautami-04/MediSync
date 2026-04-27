@@ -8,6 +8,7 @@ import styles from "./Appointments.module.css";
 import { useLocation } from "react-router-dom";
 import Pagination from "../../components/Pagination";
 import api from "../../services/api";
+import useAuth from "../../hooks/useAuth";
 import { useToast } from "../../components/ToastContext";
 
 const STATUS_CLASS = {
@@ -28,6 +29,7 @@ const formatDate = (value) => {
 const PatientAppointments = () => {
 	const location = useLocation();
 	const { addToast } = useToast();
+	const { user, refreshUser } = useAuth();
 	const [appointments, setAppointments] = useState([]);
 	const [totalCount, setTotalCount] = useState(0);
 	const [stats, setStats] = useState({ total: 0, upcoming: 0, completed: 0, cancelled: 0 });
@@ -177,16 +179,25 @@ const PatientAppointments = () => {
 		}, 2000);
 	};
 
-	const handleCancel = async (id) => {
-		if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
+	const handleCancel = (id) => {
+		setCancelTargetId(id);
+		setShowCancelDialog(true);
+	};
+
+	const confirmCancel = async () => {
+		if (!cancelTargetId) return;
 		setError("");
 		setSuccess("");
 		try {
-			await cancelAppointment(id);
+			await cancelAppointment(cancelTargetId);
 			setSuccess("Appointment cancelled successfully.");
 			await loadAppointments();
+			await refreshUser();
 		} catch (err) {
 			setError(err?.response?.data?.message || "Failed to cancel appointment.");
+		} finally {
+			setShowCancelDialog(false);
+			setCancelTargetId(null);
 		}
 	};
 
@@ -613,6 +624,13 @@ const PatientAppointments = () => {
 					</div>
 				</div>
 			)}
+			<ConfirmDialog
+				open={showCancelDialog}
+				title="Cancel Appointment?"
+				message="Are you sure you want to cancel this appointment? This action will refund the amount to your wallet."
+				onConfirm={confirmCancel}
+				onCancel={() => { setShowCancelDialog(false); setCancelTargetId(null); }}
+			/>
 		</>
 	);
 };

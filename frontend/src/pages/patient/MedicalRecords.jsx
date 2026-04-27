@@ -119,7 +119,12 @@ const MedicalRecords = () => {
                     </div>
                   </div>
                   <button 
-                    onClick={() => window.open(`http://localhost:5000${record.fileUrl || record.attachments?.[0]}`, '_blank')}
+                    onClick={() => {
+                      const url = record.fileUrl || record.attachments?.[0];
+                      if (!url) return;
+                      const finalUrl = url.startsWith('http') ? url : `http://localhost:5000${url}`;
+                      window.open(finalUrl, '_blank');
+                    }}
                     style={{ 
                     background: '#f1f5f9', 
                     border: 'none', 

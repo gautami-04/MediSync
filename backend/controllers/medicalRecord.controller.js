@@ -359,7 +359,7 @@ const patientUploadRecord = async (req, res) => {
 			return res.status(404).json({ message: 'Patient profile could not be initialized' });
 		}
 
-		const filePath = `/uploads/${req.file.filename}`;
+		const filePath = req.file.path; // Cloudinary URL
 		
 		const record = await MedicalRecord.create({
 			patient: patient._id,

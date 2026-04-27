@@ -184,22 +184,29 @@
 
 .primaryBtn, .secondaryBtn, .successBtn, .dangerBtn, .outlineBtn {
   border: none;
-  padding: 8px 16px;
-  border-radius: 99px;
-  font-weight: 700;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-weight: 800;
   cursor: pointer;
-  transition: var(--transition-fast);
-  font-size: 0.9rem;
+  transition: var(--transition-all);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .primaryBtn { background: var(--brand-primary); color: white; }
 .secondaryBtn { background: #f1f5f9; color: #475569; }
-.successBtn { background: #dcf1e7; color: #1b6348; }
-.dangerBtn { background: #fee2e2; color: #991b1b; }
-.outlineBtn { background: white; color: var(--brand-primary); border: 1px solid var(--brand-primary); }
+.successBtn { background: #dcf1e7; color: #15803d; }
+.dangerBtn { background: #fef2f2; color: #dc2626; }
+.outlineBtn { background: white; color: var(--brand-primary); border: 2px solid var(--brand-primary); }
 
-.primaryBtn:hover { opacity: 0.9; transform: translateY(-1px); }
-.secondaryBtn:hover { background: #e2e8f0; }
+.primaryBtn:hover { background: var(--brand-hover); transform: translateY(-1px); }
+.secondaryBtn:hover { background: #e2e8f0; transform: translateY(-1px); }
+.successBtn:hover { background: #d1eadb; transform: translateY(-1px); }
+.dangerBtn:hover { background: #fee2e2; transform: translateY(-1px); }
+.outlineBtn:hover { background: var(--brand-light); transform: translateY(-1px); }
+
 
 @media (max-width: 1024px) {
   .appointmentItem {

@@ -180,6 +180,7 @@ const getPatientDashboard = async (req, res) => {
 	try {
 		const patient = await getOrCreatePatient(req.user._id);
 		const now = new Date();
+		const todayStr = now.toISOString().split('T')[0];
 		const patientRefs = [req.user._id, patient._id];
 
 		const [appointments, recentRecords, totalRecordsCount, user, recentPayments, paymentsAgg] = await Promise.all([
@@ -215,6 +216,12 @@ const getPatientDashboard = async (req, res) => {
 			return scheduledTime >= now;
 		}).length;
 
+		const todayAppointments = appointments.filter((item) => {
+			const status = item.status || 'booked';
+			if (status === 'cancelled') return false;
+			return item.date === todayStr;
+		}).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+
 		const recentAppointments = [...appointments]
 			.sort((a, b) => getAppointmentDate(b) - getAppointmentDate(a))
 			.slice(0, 5);
@@ -235,6 +242,7 @@ const getPatientDashboard = async (req, res) => {
 			totalSpent,
 			savedDoctorsCount,
 			recentAppointments,
+			todayAppointments,
 			recentRecords,
 			recentPayments,
 		});

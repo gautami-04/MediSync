@@ -31,7 +31,7 @@ const Notifications = () => {
 
   const handleMarkAsRead = async (id) => {
     try {
-      await api.put(`/api/notifications/read/${id}`);
+      await api.put(`/api/notifications/${id}/read`);
       setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
     } catch (err) {
       addToast('Failed to update notification', 'error');
@@ -40,7 +40,7 @@ const Notifications = () => {
 
   const handleMarkAllRead = async () => {
     try {
-      await api.put('/api/notifications/read/all');
+      await api.put('/api/notifications/mark-all-read');
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       addToast('All notifications marked as read', 'success');
     } catch (err) {

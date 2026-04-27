@@ -136,7 +136,15 @@
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
+  transition: all 0.3s ease;
 }
+
+.appointmentCard:hover .appointmentIcon {
+  transform: rotate(-10deg) scale(1.1);
+  background: var(--brand-primary);
+  color: white;
+}
+
 
 .appointmentInfo {
   flex: 1;
@@ -165,6 +173,32 @@
   text-transform: uppercase;
   letter-spacing: 1px;
 }
+
+.dateTimeBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dateText, .timeText {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.dateText svg, .timeText svg {
+  color: var(--brand-primary);
+  opacity: 0.8;
+}
+
+.timeText {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
 
 .statusConfirmed { background: #ecfdf5; color: #059669; }
 .statusCompleted { background: #f0f9ff; color: #0284c7; }
@@ -255,3 +289,274 @@
   .appointmentCard { flex-direction: column; align-items: flex-start; }
   .statsRow { grid-template-columns: 1fr; }
 }
+
+/* Booking Modal Enhancements */
+.modalTitle {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: var(--text-main);
+  letter-spacing: -0.5px;
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.doctorPreview {
+  background: #f8fafc;
+  border: 2px solid var(--brand-light);
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.doctorPreviewAvatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--brand-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1.2rem;
+}
+
+.doctorPreviewInfo {
+  flex: 1;
+}
+
+.doctorPreviewName {
+  font-weight: 800;
+  color: var(--text-main);
+  font-size: 1.1rem;
+}
+
+.doctorPreviewSpec {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.doctorPreviewFee {
+  text-align: right;
+}
+
+.doctorPreviewFeeValue {
+  font-weight: 900;
+  color: var(--brand-primary);
+  font-size: 1.2rem;
+}
+
+.doctorPreviewFeeLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.modalActions {
+  display: flex;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.btnSubmit {
+  flex: 2;
+  background: var(--brand-primary);
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 16px;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnSubmit:hover {
+  background: var(--brand-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(48, 164, 108, 0.2);
+}
+
+.btnSubmit:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btnClose {
+  flex: 1;
+  background: #f1f5f9;
+  color: var(--text-secondary);
+  border: none;
+  padding: 16px;
+  border-radius: 16px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnClose:hover {
+  background: #e2e8f0;
+}
+
+/* Review Modal Enhancements */
+.starRating {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.starBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #e2e8f0;
+  transition: all 0.2s;
+}
+
+.starActive {
+  color: #fbbf24;
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.4));
+}
+
+.starBtn:hover {
+  transform: scale(1.2);
+}
+
+.reviewTextarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 20px;
+  border: 2px solid var(--border-color);
+  border-radius: 18px;
+  font-size: 1rem;
+  background: #f8fafc;
+  resize: none;
+  transition: all 0.2s;
+}
+
+.reviewTextarea:focus {
+  border-color: var(--brand-primary);
+  background: white;
+  outline: none;
+  box-shadow: 0 8px 20px rgba(48, 164, 108, 0.1);
+}
+
+/* Wallet Selection */
+.paymentOptions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.paymentCard {
+  border: 2px solid var(--border-color);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+}
+
+.paymentCardActive {
+  border-color: var(--brand-primary);
+  background: var(--brand-light);
+}
+
+.paymentCardIcon {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+}
+
+.paymentCardActive .paymentCardIcon {
+  color: var(--brand-primary);
+}
+
+.paymentCardLabel {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.walletBalanceInfo {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--brand-primary);
+  margin-top: 4px;
+}
+
+.appointmentActions {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+}
+
+
+.btnSecondary, .btnDanger {
+  border: none;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btnSecondary {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.btnSecondary:hover {
+  background: #e2e8f0;
+  transform: translateY(-1px);
+}
+
+.btnDanger {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.btnDanger:hover {
+  background: #fee2e2;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.1);
+}
+
+@media (max-width: 900px) {
+  .appointmentCard {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  
+  .appointmentActions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+

@@ -66,6 +66,32 @@ const PatientDashboard = () => {
       </div>
 
       <div className={styles.dashboardContent}>
+        {/* Today's Schedule */}
+        {data?.todayAppointments?.length > 0 && (
+          <div className={styles.todayCard}>
+            <div className={styles.cardHeader}>
+              <h2 className={styles.cardTitle}>Today's Schedule</h2>
+              <span className={styles.todayBadge}>Active</span>
+            </div>
+            <div className={styles.timeline}>
+              {data.todayAppointments.map((app) => (
+                <div key={app._id} className={styles.timelineItem}>
+                  <div className={styles.timeLabel}>{app.time}</div>
+                  <div className={styles.timelineContent}>
+                    <div className={styles.timelineMain}>
+                      <div className={styles.docInfo}>
+                        <span className={styles.docName}>{app.doctor?.user?.name || 'Doctor'}</span>
+                        <span className={styles.docSpec}>{app.doctor?.specialization || 'General Consultation'}</span>
+                      </div>
+                      <span className={`${styles.statusPill} ${styles[app.status]}`}>{app.status}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Recent Appointments */}
         <div className={styles.upcomingCard}>
           <div className={styles.upcomingHeader}>

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import api from "../../services/api";
 import styles from "./DoctorSearch.module.css";
+import { getImageUrl } from "../../utils/imageUrl";
 import Button from "../../components/Button";
 import { FiSearch, FiMapPin, FiCalendar, FiDollarSign, FiHeart } from "react-icons/fi";
 import { useToast } from "../../components/ToastContext";
@@ -136,7 +137,7 @@ const DoctorSearch = () => {
                   <div className={styles.avatar}>
                     {doc.user?.profilePicture ? (
                       <img 
-                        src={`http://localhost:5000${doc.user.profilePicture}`} 
+                        src={getImageUrl(doc.user.profilePicture)} 
                         alt={doc.user?.name} 
                         style={{ width: '100%', height: '100%', borderRadius: '20px', objectFit: 'cover' }}
                       />

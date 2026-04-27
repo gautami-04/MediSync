@@ -5,6 +5,7 @@ import useAuth from '../../hooks/useAuth';
 import { useToast } from '../../components/ToastContext';
 import Pagination from '../../components/Pagination';
 import { useNavigate } from 'react-router-dom';
+import { getImageUrl } from '../../utils/imageUrl';
 import styles from './Dashboard.module.css';
 
 const StatCard = ({ title, value, badgeText, badgeClass, icon, onClick }) => (
@@ -119,16 +120,46 @@ const Dashboard = () => {
                 const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
                 const todaysApps = appointments.filter(a => a.date === todayStr && a.status !== 'cancelled');
                 return todaysApps.length > 0 ? todaysApps.slice(0, 10).map((item, idx) => (
-                <div key={idx} className={styles.scheduleItem}>
-                  <div className={styles.scheduleTimeline}></div>
-                  <div className={`${styles.scheduleDot} ${item.status === 'completed' ? styles.dotArrived : styles.dotPending}`}></div>
-                  <div className={styles.scheduleTime}>{item.time}</div>
-                  <div className={styles.scheduleContent}>
-                    <div className={styles.schedulePatient}>{item.patient?.user?.name || 'Unknown Patient'}</div>
-                    <div className={styles.scheduleDesc}>{item.reason || 'Routine Consultation'}</div>
+                <div key={idx} className={styles.scheduleCard}>
+                  <div className={styles.scheduleCardTop}>
+                    <div className={styles.scheduleCardTime}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                      {item.time}
+                    </div>
+                    <div className={`${styles.statusPill} ${styles['status' + item.status.charAt(0).toUpperCase() + item.status.slice(1)]}`}>
+                      {item.status}
+                    </div>
                   </div>
-                  <div className={`${styles.scheduleStatus} ${item.status === 'completed' ? styles.statusConfirmed : styles.statusPending}`}>
-                    {item.status.toUpperCase()}
+                  
+                  <div className={styles.scheduleCardUser}>
+                    <div className={styles.scheduleCardAvatar}>
+                      {item.patient?.user?.profilePicture ? (
+                        <img src={getImageUrl(item.patient.user.profilePicture)} alt="" />
+                      ) : (
+                        (item.patient?.user?.name || 'P').charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <div className={styles.scheduleCardInfo}>
+                      <div className={styles.scheduleCardName}>{item.patient?.user?.name || 'Unknown Patient'}</div>
+                      <div className={styles.scheduleCardReason}>{item.reason || 'General Checkup'}</div>
+                    </div>
+                  </div>
+
+                  <div className={styles.scheduleCardActions}>
+                    <button 
+                      className={styles.scheduleActionBtn}
+                      onClick={() => navigate('/doctor/appointments')}
+                    >
+                      Manage
+                    </button>
+                    {item.status === 'booked' && (
+                      <button 
+                        className={styles.scheduleActionBtnPrimary}
+                        onClick={() => navigate('/doctor/appointments')}
+                      >
+                        Launch
+                      </button>
+                    )}
                   </div>
                 </div>
               )) : (

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { FiCheckCircle, FiShield, FiActivity } from "react-icons/fi";
 import Button from "../../components/Button";
 import InputField from "../../components/InputField";
 import useAuth from "../../hooks/useAuth";
@@ -14,7 +15,7 @@ const Login = () => {
 	const { login, authLoading, isAuthenticated } = useAuth();
 
 	useEffect(() => {
-		if (isAuthenticated) navigate("/home", { replace: true });
+		if (isAuthenticated) navigate("/dashboard", { replace: true });
 	}, [isAuthenticated, navigate]);
 
 	const handleChange = (e) => {
@@ -42,46 +43,77 @@ const Login = () => {
 
 	return (
 		<div className={styles.page}>
-			<div className={styles.loginLayout}>
-				<div className={styles.brand}>MediSync</div>
-				<h1 className={styles.title}>Sign In</h1>
-				<p style={{textAlign: 'center', color: 'var(--text-muted)'}}>
-					Need an account? <Link to="/register" style={{color: 'var(--primary)', fontWeight: 700}}>Register</Link>
+			<div className={styles.landingLeft}>
+				<h1 className={styles.landingTitle}>The Future of Clinical Operations.</h1>
+				<p className={styles.landingText}>
+					Connect with elite practitioners, manage medical records, and orchestrate your healthcare journey from a single professional dashboard.
 				</p>
+				
+				<div className={styles.featureList}>
+					<div className={styles.featureItem}>
+						<div className={styles.featureIcon}><FiShield /></div>
+						<span>Enterprise-Grade Data Security</span>
+					</div>
+					<div className={styles.featureItem}>
+						<div className={styles.featureIcon}><FiActivity /></div>
+						<span>Real-time Clinical Insights</span>
+					</div>
+					<div className={styles.featureItem}>
+						<div className={styles.featureIcon}><FiCheckCircle /></div>
+						<span>Verified Medical Network</span>
+					</div>
+				</div>
+			</div>
 
-				{alert && <div className={`${styles.alert} ${styles.errorAlert}`}>{alert.message}</div>}
+			<div className={styles.landingRight}>
+				<div className={styles.loginLayout} style={{ border: 'none', boxShadow: 'none', padding: 0 }}>
+					<div className={styles.brand}>
+						<img src="/images/logo.png" alt="MediSync Logo" className={styles.logoImg} />
+						<span>MediSync</span>
+					</div>
+					<h1 className={styles.heading}>Welcome Back</h1>
+					<p className={styles.subHeading}>
+						Please enter your details to sign in to your clinical account.
+					</p>
 
-				<form className={styles.form} onSubmit={handleSubmit} noValidate>
-					<InputField 
-						label="Email Address" 
-						name="email" 
-						value={form.email} 
-						onChange={handleChange} 
-						placeholder="Enter your Email Address" 
-						error={errors.email} 
-						required 
-					/>
-					
-					<div style={{ position: "relative" }}>
-						<Link to="/forgot-password" style={{ position: "absolute", right: 0, top: 0, fontSize: "0.8rem", color: "var(--primary)", fontWeight: 700 }}>Forgot?</Link>
+					{alert && <div className={`${styles.alert} ${styles.errorAlert}`}>{alert.message}</div>}
+
+					<form className={styles.form} onSubmit={handleSubmit} noValidate>
 						<InputField 
-							label="Password" 
-							name="password" 
-							type="password" 
-							value={form.password} 
+							label="Email Address" 
+							name="email" 
+							value={form.email} 
 							onChange={handleChange} 
-							placeholder="Enter your Password" 
-							error={errors.password} 
+							placeholder="Enter your Email Address" 
+							error={errors.email} 
 							required 
 						/>
-					</div>
+						
+						<div style={{ position: "relative" }}>
+							<Link to="/forgot-password" style={{ position: "absolute", right: 0, top: 0, fontSize: "0.8rem", color: "#10b981", fontWeight: 700, textDecoration: 'none' }}>Forgot?</Link>
+							<InputField 
+								label="Password" 
+								name="password" 
+								type="password" 
+								value={form.password} 
+								onChange={handleChange} 
+								placeholder="Enter your Password" 
+								error={errors.password} 
+								required 
+							/>
+						</div>
 
-					<div className={styles.formFooter} style={{marginTop: '10px'}}>
-						<Button type="submit" loading={authLoading}>
-							SIGN IN
-						</Button>
+						<div className={styles.formFooter} style={{marginTop: '10px'}}>
+							<Button type="submit" variant="success" loading={authLoading}>
+								SIGN IN
+							</Button>
+						</div>
+					</form>
+
+					<div style={{ textAlign: 'center', marginTop: '32px', fontSize: '0.9rem', color: '#64748b' }}>
+						New to MediSync? <Link to="/register" style={{ color: "#10b981", fontWeight: 700, textDecoration: 'none' }}>Create an account</Link>
 					</div>
-				</form>
+				</div>
 			</div>
 		</div>
 	);

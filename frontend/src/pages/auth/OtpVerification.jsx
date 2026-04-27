@@ -4,6 +4,7 @@ import Button from "../../components/Button";
 import useAuth from "../../hooks/useAuth";
 import { sendOtp, verifyOtp } from "../../services/authService";
 import { validateOtp } from "../../utils/validators";
+import OtpInput from "../../components/OtpInput";
 import styles from "./AuthPages.module.css";
 
 const OTP_LENGTH = 6;
@@ -165,81 +166,50 @@ const OtpVerification = () => {
 
   return (
     <div className={styles.page}>
-      <div className={styles.layout}>
-        <aside className={styles.infoPanel}>
-          <p className={styles.brand}>MediSync Digital Health</p>
-          <h1 className={styles.infoTitle}>OTP verification for secure access.</h1>
-          <p className={styles.infoText}>
-            Enter your 6-digit code to verify account ownership before accessing healthcare data.
-          </p>
-          <div className={styles.infoBadge}>One-time passcodes help protect sensitive patient data.</div>
-        </aside>
+      <div className={styles.otpCard}>
+        <div className={styles.brand}>MediSync</div>
+        <h2 className={styles.heading}>Security Code</h2>
+        <p className={styles.subHeading}>
+          Sent to {email ? <strong style={{ color: 'var(--text-main)' }}>{email}</strong> : "your email"}.
+        </p>
 
-        <section className={styles.formPanel}>
-          <h2 className={styles.heading}>Verify OTP</h2>
-          <p className={styles.subHeading}>
-            Enter the 6-digit code sent to your email{email ? ` (${email})` : ""}.
-          </p>
+        {alert ? (
+          <div
+            className={`${styles.alert} ${
+              alert.type === "success" ? styles.successAlert : styles.errorAlert
+            }`}
+            role="alert"
+          >
+            {alert.message}
+          </div>
+        ) : null}
 
-          {alert ? (
-            <div
-              className={`${styles.alert} ${
-                alert.type === "success" ? styles.successAlert : styles.errorAlert
-              }`}
-              role="alert"
-            >
-              {alert.message}
-            </div>
-          ) : null}
+        <form className={styles.form} onSubmit={handleVerify} noValidate>
+          <OtpInput 
+            value={otp} 
+            onChange={(val) => setOtpDigits(val.split('').concat(Array(OTP_LENGTH).fill('')).slice(0, OTP_LENGTH))}
+            error={error}
+          />
 
-          <form className={styles.form} onSubmit={handleVerify} noValidate>
-            <div className={styles.otpWrap}>
-              <label className={styles.selectLabel} htmlFor="otp-input-0">
-                OTP<span className={styles.required}>*</span>
-              </label>
-
-              <div className={styles.otpRow} onPaste={handleOtpPaste}>
-                {otpDigits.map((digit, index) => (
-                  <input
-                    key={`otp-${index}`}
-                    id={`otp-input-${index}`}
-                    ref={(element) => {
-                      inputRefs.current[index] = element;
-                    }}
-                    type="text"
-                    value={digit}
-                    maxLength={1}
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    className={`${styles.otpInput} ${digit ? styles.otpInputFilled : ""}`}
-                    onChange={(event) => handleOtpInputChange(index, event.target.value)}
-                    onKeyDown={(event) => handleOtpKeyDown(index, event)}
-                    aria-label={`OTP digit ${index + 1}`}
-                  />
-                ))}
-              </div>
-
-              {error ? <p className={styles.errorText}>{error}</p> : null}
-            </div>
-
-            <Button type="submit" loading={loading}>
-              Verify
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginTop: '12px' }}>
+            <Button type="submit" loading={loading} style={{ width: '220px' }}>
+              {loading ? 'Verifying...' : 'Continue'}
             </Button>
 
             <button
               type="button"
-              className={styles.textButton}
+              className={styles.resendBtn}
               onClick={handleResendOtp}
               disabled={resendCountdown > 0}
             >
-              {resendCountdown > 0 ? `Resend OTP in ${resendCountdown}s` : "Resend OTP"}
+              {resendCountdown > 0 ? `Resend available in ${resendCountdown}s` : "Resend Code"}
             </button>
-          </form>
+          </div>
+        </form>
 
-          <p className={styles.footerText}>
-            Need to change email? <Link to="/register">Go to Register</Link>
-          </p>
-        </section>
+        <p className={styles.footerText} style={{ marginTop: '32px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+          Need to change email? <Link to="/register" style={{ color: 'var(--brand-primary)', fontWeight: 700, textDecoration: 'none' }}>Go to Register</Link>
+        </p>
       </div>
     </div>
   );

@@ -4,7 +4,9 @@ import { useToast } from "../components/ToastContext";
 import Button from "../components/Button";
 import InputField from "../components/InputField";
 import api from "../services/api";
+import OtpInput from "../components/OtpInput";
 import styles from "./Settings.module.css";
+import { getImageUrl } from "../utils/imageUrl";
 
 const Settings = () => {
 	const [activeTab, setActiveTab] = useState("Profile");
@@ -145,7 +147,7 @@ const Settings = () => {
 							<div className={styles.profileSection}>
 								<div className={styles.avatarLarge} style={{ position: 'relative', cursor: 'pointer' }} onClick={() => document.getElementById('dp-upload').click()}>
 									{user?.profilePicture ? (
-										<img src={`http://localhost:5000${user.profilePicture}`} alt="Avatar" style={{width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover'}} />
+										<img src={getImageUrl(user.profilePicture)} alt="Avatar" style={{width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover'}} />
 									) : (
 										<img src={`https://ui-avatars.com/api/?name=${(user?.name || "User").replace(' ', '+')}&background=random`} alt="Avatar" style={{width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover'}} />
 									)}
@@ -169,8 +171,11 @@ const Settings = () => {
 
 							{showOtp && otpContext === "profile" && (
 								<div className={styles.otpSection}>
-									<InputField label="Enter Verification Code" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="6-digit OTP" />
-									<Button onClick={handleVerifyAndSave} loading={loading} style={{marginTop: '10px'}}>Verify & Save Changes</Button>
+									<div style={{ marginBottom: '16px' }}>
+										<p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '12px', textAlign: 'center' }}>VERIFICATION CODE</p>
+										<OtpInput value={otp} onChange={setOtp} />
+									</div>
+									<Button onClick={handleVerifyAndSave} loading={loading} style={{width: '100%'}}>Verify & Save Changes</Button>
 								</div>
 							)}
 
@@ -197,8 +202,11 @@ const Settings = () => {
 
 							{showOtp && otpContext === "password" && (
 								<div className={styles.otpSection}>
-									<InputField label="Enter Verification Code" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="6-digit OTP" />
-									<Button onClick={handleVerifyAndSave} loading={loading} style={{marginTop: '10px'}}>Verify & Change Password</Button>
+									<div style={{ marginBottom: '16px' }}>
+										<p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '12px', textAlign: 'center' }}>VERIFICATION CODE</p>
+										<OtpInput value={otp} onChange={setOtp} />
+									</div>
+									<Button onClick={handleVerifyAndSave} loading={loading} style={{width: '100%'}}>Verify & Change Password</Button>
 								</div>
 							)}
 

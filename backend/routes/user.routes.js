@@ -3,10 +3,10 @@ const router = express.Router();
 
 const protect = require('../middleware/auth.middleware');
 const { getMe, updateMe, uploadProfilePicture } = require('../controllers/user.controller');
-const upload = require('../middleware/upload.middleware');
+const { uploadCloud } = require('../utils/cloudinary');
 
 router.get('/me', protect, getMe);
 router.put('/me', protect, updateMe);
-router.post('/upload-profile-picture', protect, upload.single('profilePicture'), uploadProfilePicture);
+router.post('/upload-profile-picture', protect, uploadCloud.single('profilePicture'), uploadProfilePicture);
 
 module.exports = router;

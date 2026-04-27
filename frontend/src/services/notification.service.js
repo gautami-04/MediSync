@@ -6,6 +6,6 @@ export const getMyNotifications = async () => {
 };
 
 export const markNotificationRead = async (id) => {
-  const response = await api.patch(`/api/notifications/${id}/read`);
+  const response = await api.put(`/api/notifications/${id}/read`);
   return response.data;
 };

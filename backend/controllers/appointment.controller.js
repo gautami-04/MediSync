@@ -81,8 +81,20 @@ exports.bookAppointment = async (req, res) => {
       paymentMode: paymentMode || 'prepaid',
     });
 
-    // Create a transaction record if prepaid
-    if (paymentMode === 'prepaid') {
+    // Create a transaction record if prepaid or wallet
+    if (paymentMode === 'prepaid' || paymentMode === 'wallet') {
+      if (paymentMode === 'wallet') {
+        const user = await User.findById(req.user._id);
+        if (user.walletBalance < consultationFee) {
+          // If wallet balance is insufficient, delete the appointment and throw error
+          await Appointment.findByIdAndDelete(appointment._id);
+          return res.status(400).json({ message: 'Insufficient wallet balance' });
+        }
+        // Deduct from wallet
+        user.walletBalance -= consultationFee;
+        await user.save();
+      }
+
       await Payment.create({
         patient: patientProfile._id,
         doctor: doctorId,
@@ -90,11 +102,11 @@ exports.bookAppointment = async (req, res) => {
         doctorName: doctorProfile.user?.name || 'Doctor',
         specialty: doctorProfile.specialization || 'General',
         amount: consultationFee,
-        method: 'card',
+        method: paymentMode === 'wallet' ? 'wallet' : 'card',
         status: 'paid',
         referenceId: `TXN-${crypto.randomBytes(4).toString('hex').toUpperCase()}`,
         paidAt: new Date(),
-        notes: `Appointment booking on ${date} at ${time}`
+        notes: `Appointment booking on ${date} at ${time} via ${paymentMode}`
       });
     }
 
@@ -221,6 +233,8 @@ exports.cancelAppointment = async (req, res) => {
           doctor: appointment.doctor,
           appointment: appointment._id,
           amount: originalPayment.amount,
+          doctorName: originalPayment.doctorName,
+          specialty: originalPayment.specialty,
           type: 'refund',
           transactionType: 'credit',
           status: 'refunded',

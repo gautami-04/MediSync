@@ -4,6 +4,7 @@ import { useToast } from '../../components/ToastContext';
 import Pagination from '../../components/Pagination';
 import api from '../../services/api';
 import styles from './DoctorAppointments.module.css';
+import { getImageUrl } from '../../utils/imageUrl';
 
 const DoctorAppointments = () => {
   const [appointments, setAppointments] = useState([]);
@@ -150,7 +151,7 @@ const DoctorAppointments = () => {
                 <div key={a._id} className={styles.appointmentItem}>
                   <div className={styles.patientInfo}>
                     <img 
-                      src={a.patient?.user?.profilePicture ? `http://localhost:5000${a.patient.user.profilePicture}` : `https://ui-avatars.com/api/?name=${(a.patient?.user?.name || 'P').replace(' ', '+')}&background=random`} 
+                      src={a.patient?.user?.profilePicture ? getImageUrl(a.patient.user.profilePicture) : `https://ui-avatars.com/api/?name=${(a.patient?.user?.name || 'P').replace(' ', '+')}&background=random`} 
                       alt={a.patient?.user?.name} 
                       className={styles.patientAvatar} 
                     />
@@ -341,7 +342,7 @@ const DoctorAppointments = () => {
                       {r.attachments.map((file, i) => (
                         <a 
                           key={i} 
-                          href={`http://localhost:5000${file}`} 
+                          href={getImageUrl(file)} 
                           target="_blank" 
                           rel="noreferrer"
                           style={{ background: '#f8fafc', padding: '8px 16px', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--primary)', textDecoration: 'none', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '8px' }}

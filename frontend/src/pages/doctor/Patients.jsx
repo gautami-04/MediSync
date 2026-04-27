@@ -3,6 +3,7 @@ import api from '../../services/api';
 import Pagination from '../../components/Pagination';
 import { useToast } from '../../components/ToastContext';
 import styles from './Patients.module.css';
+import { getImageUrl } from '../../utils/imageUrl';
 
 const Patients = () => {
   const [patients, setPatients] = useState([]);
@@ -77,7 +78,7 @@ const Patients = () => {
                       <div className={styles.patientCell}>
                         <div className={styles.avatar}>
                           {p.user?.profilePicture ? (
-                            <img src={`http://localhost:5000${p.user.profilePicture}`} alt="" />
+                            <img src={getImageUrl(p.user.profilePicture)} alt="" />
                           ) : (
                             p.user?.name?.charAt(0) || 'P'
                           )}

@@ -5,6 +5,7 @@ import { useToast } from "./ToastContext";
 import { getDoctorAppointments, getMyAppointments } from "../services/appointment.service";
 import api from "../services/api";
 import styles from "./DashboardLayout.module.css";
+import { getImageUrl } from "../utils/imageUrl";
 import { 
   FiHome, 
   FiCalendar, 
@@ -170,7 +171,7 @@ const DashboardLayout = ({ children }) => {
                         onClick={async (e) => {
                           e.stopPropagation();
                           try {
-                            await api.put('/api/notifications/all/read');
+                            await api.put('/api/notifications/mark-all-read');
                             setUnreadCount(0);
                             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
                             addToast('All notifications marked as read', 'success');
@@ -231,9 +232,36 @@ const DashboardLayout = ({ children }) => {
               </button>
               {showSupport && (
                 <div className={styles.dropdownBox}>
-                  <div className={styles.dropdownTitle}>Help & Support</div>
-                  <div className={styles.dropdownContent}>
-                    Contact for more medisyncg6@gmail.com
+                  <div className={styles.dropdownTitle}>Help & Support Center</div>
+                  <div className={styles.supportContent}>
+                    <div className={styles.supportSection}>
+                      <div className={styles.sectionLabel}>Quick Assistance</div>
+                      <div className={styles.supportLink} onClick={() => { navigate('/settings'); setShowSupport(false); }}>
+                        <FiSettings /> Account Settings
+                      </div>
+                    </div>
+                    
+                    <div className={styles.supportSection}>
+                      <div className={styles.sectionLabel}>Contact Support</div>
+                      <div className={styles.contactCard}>
+                        <div className={styles.contactIcon} style={{ background: '#ecfdf5', color: '#059669' }}>
+                          <FiBell />
+                        </div>
+                        <div className={styles.contactInfo}>
+                          <div className={styles.contactTitle}>Email Support</div>
+                          <div className={styles.contactValue}>medisyncg6@gmail.com</div>
+                        </div>
+                      </div>
+                      <div className={styles.contactCard}>
+                        <div className={styles.contactIcon} style={{ background: '#eff6ff', color: '#2563eb' }}>
+                          <FiUsers />
+                        </div>
+                        <div className={styles.contactInfo}>
+                          <div className={styles.contactTitle}>Available Hours</div>
+                          <div className={styles.contactValue}>24/7 Clinical Support</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -246,7 +274,7 @@ const DashboardLayout = ({ children }) => {
               </div>
               <div className={styles.userAvatar}>
                 {user?.profilePicture ? (
-                  <img src={`http://localhost:5000${user.profilePicture}`} alt="Avatar" />
+                  <img src={getImageUrl(user.profilePicture)} alt="Avatar" />
                 ) : (
                   <img src={`https://ui-avatars.com/api/?name=${(user?.name || "User").replace(' ', '+')}&background=random`} alt="Avatar" />
                 )}

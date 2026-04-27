@@ -5,13 +5,14 @@ const authorizeRoles = require('../middleware/role.middleware');
 const {
 	getMyNotifications,
 	markAsRead,
+	markAllAsRead,
 	createNotification,
 } = require('../controllers/notification.controller');
 
 router.post('/', protect, authorizeRoles('admin'), createNotification);
 router.get('/', protect, getMyNotifications);
 router.get('/my', protect, getMyNotifications);
-router.put('/mark-read', protect, markAsRead);
+router.put('/mark-all-read', protect, markAllAsRead);
 router.put('/:id/read', protect, markAsRead);
 router.patch('/:id/read', protect, markAsRead);
 

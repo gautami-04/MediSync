@@ -195,9 +195,15 @@ const Payments = () => {
 	}, [user]);
 
 	const summary = useMemo(() => {
-		const totalValue = payments
+		const paidTotal = payments
 			.filter((item) => item?.status === "paid")
 			.reduce((sum, item) => sum + (Number(item?.amount) || 0), 0);
+
+		const refundTotal = payments
+			.filter((item) => item?.status === "refunded")
+			.reduce((sum, item) => sum + (Number(item?.amount) || 0), 0);
+
+		const totalValue = paidTotal - refundTotal;
 
 		const pendingTotal = payments
 			.filter((item) => item?.status === "pending")

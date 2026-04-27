@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import useAuth from '../../hooks/useAuth';
 import styles from './Reviews.module.css';
+import { getImageUrl } from '../../utils/imageUrl';
 import { FiStar } from 'react-icons/fi';
 import Pagination from '../../components/Pagination';
 
@@ -57,7 +58,7 @@ const Reviews = () => {
             <div className={styles.reviewHeader}>
               <div className={styles.patientAvatar}>
                 {review.patient?.profilePicture ? (
-                  <img src={`http://localhost:5000${review.patient.profilePicture}`} alt="Avatar" />
+                  <img src={getImageUrl(review.patient.profilePicture)} alt="Avatar" />
                 ) : (
                   review.patient?.name?.charAt(0) || 'P'
                 )}

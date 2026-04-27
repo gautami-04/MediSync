@@ -4,6 +4,7 @@ import { uploadProfilePicture } from '../../services/user.service';
 import useAuth from '../../hooks/useAuth';
 import { useToast } from '../../components/ToastContext';
 import styles from './DoctorProfile.module.css';
+import { getImageUrl } from '../../utils/imageUrl';
 
 const DoctorProfile = () => {
   const { user, updateUser } = useAuth();
@@ -111,7 +112,7 @@ const DoctorProfile = () => {
         <div className={styles.formSection}>
           <div className={styles.profileAvatarGroup}>
             <img 
-              src={formData.profilePicture ? `http://localhost:5000${formData.profilePicture}` : `https://ui-avatars.com/api/?name=${formData.name.replace(' ', '+')}&background=random`} 
+              src={formData.profilePicture ? getImageUrl(formData.profilePicture) : `https://ui-avatars.com/api/?name=${formData.name.replace(' ', '+')}&background=random`} 
               alt="Avatar" 
               className={styles.avatarImage} 
             />
@@ -192,7 +193,7 @@ const DoctorProfile = () => {
             </div>
             <div className={styles.previewBody}>
               <img 
-                src={formData.profilePicture ? `http://localhost:5000${formData.profilePicture}` : `https://ui-avatars.com/api/?name=${formData.name.replace(' ', '+')}&background=random`} 
+                src={formData.profilePicture ? getImageUrl(formData.profilePicture) : `https://ui-avatars.com/api/?name=${formData.name.replace(' ', '+')}&background=random`} 
                 alt="Avatar" 
                 className={styles.previewAvatar} 
               />

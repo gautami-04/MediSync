@@ -24,19 +24,25 @@ const getMyNotifications = async (req, res) => {
   }
 };
 
-// Mark as Read (Individual or Bulk)
+// Mark All as Read
+const markAllAsRead = async (req, res) => {
+  try {
+    await Notification.updateMany(
+      { recipient: req.user._id, isRead: false },
+      { isRead: true }
+    );
+    res.json({ message: 'All notifications marked as read' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Mark individual as Read
 const markAsRead = async (req, res) => {
   try {
     const { id } = req.params;
-    if (id === 'all') {
-      await Notification.updateMany(
-        { recipient: req.user._id, isRead: false },
-        { isRead: true }
-      );
-      return res.json({ message: 'All notifications marked as read' });
-    }
-
     const notification = await Notification.findById(id);
+    
     if (!notification) return res.status(404).json({ message: 'Notification not found' });
 
     if (notification.recipient.toString() !== req.user._id.toString()) {
@@ -80,5 +86,6 @@ module.exports = {
   createNotification,
   getMyNotifications,
   markAsRead,
+  markAllAsRead,
   createInternalNotification
 };

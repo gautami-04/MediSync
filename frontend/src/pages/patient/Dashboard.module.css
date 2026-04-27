@@ -230,3 +230,135 @@
   width: auto;
   padding: 0 28px;
 }
+
+/* Today's Schedule */
+.todayCard {
+  background: white;
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+  display: flex;
+  flex-direction: column;
+  grid-column: span 2;
+  margin-bottom: 24px;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.cardTitle {
+  font-size: 1.25rem;
+  font-weight: 900;
+  margin: 0;
+}
+
+.todayBadge {
+  background: #fdf2f8;
+  color: #db2777;
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.timelineItem {
+  display: flex;
+  gap: 20px;
+}
+
+.timeLabel {
+  width: 70px;
+  font-weight: 800;
+  color: var(--brand-primary);
+  font-size: 0.9rem;
+  padding-top: 4px;
+}
+
+.timelineContent {
+  flex: 1;
+  position: relative;
+  padding-bottom: 16px;
+  border-left: 2px solid #f1f5f9;
+  padding-left: 24px;
+}
+
+.timelineContent::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--brand-primary);
+}
+
+.timelineMain {
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.docInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.docName {
+  font-weight: 800;
+  color: var(--bg-dark);
+}
+
+.docSpec {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.statusPill {
+  font-size: 0.65rem;
+  font-weight: 900;
+  padding: 4px 12px;
+  border-radius: 99px;
+  text-transform: uppercase;
+}
+
+.booked { background: #eff6ff; color: #2563eb; }
+.confirmed { background: #ecfdf5; color: #059669; }
+.completed { background: #f0f9ff; color: #0284c7; }
+.cancelled { background: #fef2f2; color: #dc2626; }
+.rescheduled { background: #fffbeb; color: #d97706; }
+
+@media (max-width: 768px) {
+  .todayCard {
+    grid-column: span 1;
+  }
+  .timelineItem {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .timeLabel {
+    width: auto;
+  }
+  .timelineContent {
+    border-left: none;
+    padding-left: 0;
+  }
+  .timelineContent::before {
+    display: none;
+  }
+}
+

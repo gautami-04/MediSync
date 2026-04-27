@@ -15,14 +15,22 @@
 
 .primary {
   color: white;
-  background: var(--brand-primary);
-  box-shadow: 0 8px 16px rgba(48, 164, 108, 0.2);
+  background: #0f172a;
 }
 
 .primary:hover:not(:disabled) {
-  background: var(--brand-hover);
+  background: #1e293b;
   transform: translateY(-2px);
   box-shadow: 0 12px 20px rgba(48, 164, 108, 0.25);
+}
+
+.success {
+  color: white;
+  background: #10b981;
+}
+
+.success:hover:not(:disabled) {
+  background: #059669;
 }
 
 .secondary {
@@ -71,11 +79,13 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 3px solid rgba(255,255,255,0.3);
+  border: 3px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }

@@ -4,6 +4,7 @@ import Button from "../../components/Button";
 import InputField from "../../components/InputField";
 import { resetPassword, sendOtp, verifyOtp } from "../../services/authService";
 import { validateForgotEmail, validateOtp, validatePasswordReset } from "../../utils/validators";
+import OtpInput from "../../components/OtpInput";
 import styles from "./AuthPages.module.css";
 
 const OTP_LENGTH = 6;
@@ -270,29 +271,14 @@ const ForgotPassword = () => {
 						</div>
 
 						<form onSubmit={handleVerifyOtp}>
-							<div className={styles.otpRow}>
-								{otpDigits.map((digit, index) => (
-									<input
-										key={index}
-										id={`forgot-otp-${index}`}
-										ref={(el) => {
-											inputRefs.current[index] = el;
-										}}
-										type="text"
-										maxLength={1}
-										inputMode="numeric"
-										className={styles.otpInput}
-										value={digit}
-										onChange={(e) => handleOtpChange(index, e.target.value)}
-										onKeyDown={(e) => handleOtpKeyDown(index, e)}
-									/>
-								))}
-							</div>
+							<OtpInput 
+								value={otp} 
+								onChange={(val) => setOtpDigits(val.split('').concat(Array(OTP_LENGTH).fill('')).slice(0, OTP_LENGTH))}
+								error={errors.otp}
+							/>
 
-							{errors.otp ? <p className={styles.errorText}>{errors.otp}</p> : null}
-
-							<Button type="submit" loading={loading}>
-								Verify OTP
+							<Button type="submit" loading={loading} style={{ width: '100%', marginTop: '12px' }}>
+								Verify Security Code
 							</Button>
 						</form>
 

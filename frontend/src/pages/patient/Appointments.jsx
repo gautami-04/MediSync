@@ -10,6 +10,8 @@ import Pagination from "../../components/Pagination";
 import api from "../../services/api";
 import useAuth from "../../hooks/useAuth";
 import { useToast } from "../../components/ToastContext";
+import { getImageUrl } from "../../utils/imageUrl";
+import { FiCalendar, FiXCircle, FiClock, FiStar, FiCreditCard } from "react-icons/fi";
 
 const STATUS_CLASS = {
 	booked: styles.statusBooked,
@@ -146,6 +148,13 @@ const PatientAppointments = () => {
 		
 		if (formData.paymentMode === 'prepaid') {
 			setShowPaymentModal(true);
+		} else if (formData.paymentMode === 'wallet') {
+			const fee = selectedDoctor?.consultationFee || 0;
+			if (user.walletBalance < fee) {
+				addToast(`Insufficient wallet balance. You need ₹${fee} but have ₹${user.walletBalance}`, "error");
+				return;
+			}
+			handleBook();
 		} else {
 			handleBook();
 		}
@@ -163,6 +172,7 @@ const PatientAppointments = () => {
 			setFormData({ doctorId: "", date: "", time: "", reason: "", paymentMode: "prepaid" });
 			setSelectedSlot(null);
 			await loadAppointments();
+			await refreshUser();
 		} catch (err) {
 			setError(err?.response?.data?.message || "Failed to book appointment.");
 		} finally {
@@ -294,8 +304,7 @@ const PatientAppointments = () => {
 			<div className={styles.filterTabs}>
 				{filters.map((f) => (
 					<button key={f.key} className={`${styles.filterTab} ${filter === f.key ? styles.filterTabActive : ""}`} onClick={() => setFilter(f.key)}>
-						{f.label}
-						<span className={styles.filterCount}>{f.count}</span>
+						{f.label} ({f.count})
 					</button>
 				))}
 			</div>
@@ -338,8 +347,14 @@ const PatientAppointments = () => {
 								</div>
 							</div>
 							<div className={styles.dateTimeBlock}>
-								<div className={styles.dateText}>{formatDate(appt.date)}</div>
-								<div className={styles.timeText}>{appt.time || "-"}</div>
+								<div className={styles.dateText}>
+									<FiCalendar size={14} />
+									{formatDate(appt.date)}
+								</div>
+								<div className={styles.timeText}>
+									<FiClock size={14} />
+									{appt.time || "-"}
+								</div>
 							</div>
 							<span className={`${styles.statusPill} ${STATUS_CLASS[appt.status] || styles.statusBooked}`}>
 								{appt.status || "booked"}
@@ -355,12 +370,14 @@ const PatientAppointments = () => {
 												setShowRescheduleModal(true);
 											}}
 										>
+											<FiCalendar size={16} />
 											Reschedule
 										</button>
 										<button 
 											className={styles.btnDanger} 
 											onClick={() => handleCancel(appt._id)}
 										>
+											<FiXCircle size={16} />
 											Cancel
 										</button>
 									</>
@@ -373,6 +390,7 @@ const PatientAppointments = () => {
 											setShowReviewModal(true);
 										}}
 									>
+										<FiStar size={16} />
 										Leave Review
 									</button>
 								)}
@@ -418,7 +436,11 @@ const PatientAppointments = () => {
 							{selectedDoctor && (
 								<div className={styles.doctorPreview}>
 									<div className={styles.doctorPreviewAvatar}>
-										{(selectedDoctor?.user?.name || "D").charAt(0).toUpperCase()}
+										{selectedDoctor?.user?.profilePicture ? (
+											<img src={getImageUrl(selectedDoctor.user.profilePicture)} alt="" style={{width: '100%', height: '100%', borderRadius: '16px', objectFit: 'cover'}} />
+										) : (
+											(selectedDoctor?.user?.name || "D").charAt(0).toUpperCase()
+										)}
 									</div>
 									<div className={styles.doctorPreviewInfo}>
 										<div className={styles.doctorPreviewName}>{selectedDoctor?.user?.name || "Doctor"}</div>
@@ -492,16 +514,30 @@ const PatientAppointments = () => {
 							</div>
 
 							<div className={styles.formGroup}>
-								<label className={styles.formLabel}>Payment Preference</label>
-								<div style={{ display: "flex", gap: "20px", marginTop: "8px" }}>
-									<label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
-										<input type="radio" name="paymentMode" value="prepaid" checked={formData.paymentMode === "prepaid"} onChange={(e) => setFormData({ ...formData, paymentMode: e.target.value })} />
-										Pay Now (Prepaid)
-									</label>
-									<label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
-										<input type="radio" name="paymentMode" value="pay_later" checked={formData.paymentMode === "pay_later"} onChange={(e) => setFormData({ ...formData, paymentMode: e.target.value })} />
-										Pay Later
-									</label>
+								<label className={styles.formLabel}>Payment Method</label>
+								<div className={styles.paymentOptions}>
+									<div 
+										className={`${styles.paymentCard} ${formData.paymentMode === 'wallet' ? styles.paymentCardActive : ''}`}
+										onClick={() => setFormData({ ...formData, paymentMode: 'wallet' })}
+									>
+										<div className={styles.paymentCardIcon}><FiCreditCard /></div>
+										<div className={styles.paymentCardLabel}>Wallet</div>
+										<div className={styles.walletBalanceInfo}>Bal: ₹{user?.walletBalance || 0}</div>
+									</div>
+									<div 
+										className={`${styles.paymentCard} ${formData.paymentMode === 'prepaid' ? styles.paymentCardActive : ''}`}
+										onClick={() => setFormData({ ...formData, paymentMode: 'prepaid' })}
+									>
+										<div className={styles.paymentCardIcon}><FiCreditCard /></div>
+										<div className={styles.paymentCardLabel}>Card</div>
+									</div>
+									<div 
+										className={`${styles.paymentCard} ${formData.paymentMode === 'pay_later' ? styles.paymentCardActive : ''}`}
+										onClick={() => setFormData({ ...formData, paymentMode: 'pay_later' })}
+									>
+										<div className={styles.paymentCardIcon}><FiClock /></div>
+										<div className={styles.paymentCardLabel}>Later</div>
+									</div>
 								</div>
 							</div>
 
@@ -541,35 +577,39 @@ const PatientAppointments = () => {
 				</div>
 			)}
 
-			{/* Review Modal */}
 			{showReviewModal && reviewTarget && (
 				<div className={styles.modalOverlay} onClick={() => setShowReviewModal(false)}>
-					<div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-						<h2 className={styles.modalTitle}>Review</h2>
+					<div className={styles.modal} style={{ maxWidth: '450px' }} onClick={(e) => e.stopPropagation()}>
+						<div className={styles.modalTitle}>Share Your Experience</div>
+						<p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '24px' }}>
+							How was your consultation with {getDoctorName(reviewTarget)}?
+						</p>
 						<form onSubmit={handleReviewSubmit}>
-							<div className={styles.formGroup}>
-								<label className={styles.label}>Rating</label>
-								<div className={styles.starRating}>
-									{[1, 2, 3, 4, 5].map((star) => (
-										<button
-											key={star}
-											type="button"
-											className={`${styles.starBtn} ${reviewData.rating >= star ? styles.starBtnActive : ""}`}
-											onClick={() => setReviewData({ ...reviewData, rating: star })}
-										>
-											<svg width="24" height="24" viewBox="0 0 24 24" fill={reviewData.rating >= star ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-												<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-											</svg>
-										</button>
-									))}
-								</div>
+							<div className={styles.starRating}>
+								{[1, 2, 3, 4, 5].map((star) => (
+									<button
+										key={star}
+										type="button"
+										className={`${styles.starBtn} ${reviewData.rating >= star ? styles.starActive : ""}`}
+										onClick={() => setReviewData({ ...reviewData, rating: star })}
+									>
+										<FiStar size={32} fill={reviewData.rating >= star ? "currentColor" : "none"} />
+									</button>
+								))}
 							</div>
 							<div className={styles.formGroup}>
-								<label className={styles.label}>Comment</label>
-								<textarea value={reviewData.comment} onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })} className={styles.formTextarea} />
+								<label className={styles.formLabel}>Your Review</label>
+								<textarea 
+									value={reviewData.comment} 
+									onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })} 
+									className={styles.reviewTextarea} 
+									placeholder="Tell us about the care you received..."
+								/>
 							</div>
 							<div className={styles.modalActions}>
-								<button type="submit" className={styles.btnSubmit} disabled={submittingReview}>Submit</button>
+								<button type="submit" className={styles.btnSubmit} disabled={submittingReview}>
+									{submittingReview ? 'Submitting...' : 'Post Review'}
+								</button>
 								<button type="button" className={styles.btnClose} onClick={() => setShowReviewModal(false)}>Cancel</button>
 							</div>
 						</form>

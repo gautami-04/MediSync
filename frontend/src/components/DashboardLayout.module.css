@@ -265,8 +265,8 @@
   right: 0;
   width: 340px;
   background: white;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--border-color);
   padding: 0;
   z-index: 1000;
@@ -275,12 +275,106 @@
 }
 
 .dropdownTitle {
-  padding: 20px 24px;
+  padding: 24px;
   background: #f8fafc;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 800;
   color: var(--text-main);
   border-bottom: 1px solid var(--border-color);
+  letter-spacing: -0.3px;
+}
+
+.supportContent {
+  padding: 24px;
+}
+
+.supportSection {
+  margin-bottom: 24px;
+}
+
+.sectionLabel {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.supportLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.supportLink:hover {
+  background: var(--brand-light);
+  color: var(--brand-primary);
+  transform: translateX(4px);
+}
+
+.contactCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid #f1f5f9;
+  margin-bottom: 12px;
+  transition: all 0.2s;
+}
+
+.contactCard:hover {
+  border-color: var(--brand-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.contactIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.contactInfo {
+  flex: 1;
+}
+
+.contactTitle {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.contactValue {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.supportFooter {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.helpLink {
+  color: var(--brand-primary);
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .notificationItem {

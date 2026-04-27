@@ -128,8 +128,7 @@ const AdminAppointments = () => {
 			<div className={styles.filterTabs}>
 				{filters.map((f) => (
 					<button key={f.key} className={`${styles.filterTab} ${filter === f.key ? styles.filterTabActive : ""}`} onClick={() => setFilter(f.key)}>
-						{f.label}
-						<span className={styles.filterCount}>{f.count}</span>
+						{f.label} ({f.count})
 					</button>
 				))}
 			</div>

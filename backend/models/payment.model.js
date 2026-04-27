@@ -34,7 +34,7 @@ const paymentSchema = new mongoose.Schema(
     },
     method: {
       type: String,
-      enum: ['card', 'bank', 'cash', 'upi', 'other'],
+      enum: ['card', 'bank', 'cash', 'upi', 'wallet', 'other'],
       default: 'card',
     },
     status: {

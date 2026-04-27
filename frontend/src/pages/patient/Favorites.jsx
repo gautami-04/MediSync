@@ -79,7 +79,7 @@ const Favorites = () => {
                     {doctor.user?.name?.charAt(0) || 'D'}
                   </div>
                   <div>
-                    <h3 style={{ margin: 0, fontWeight: 800 }}>{doctor.user?.name || 'Dr. Practitioner'}</h3>
+                    <h3 style={{ margin: 0, fontWeight: 800 }}>{doctor.user?.name || ''}</h3>
                     <p style={{ margin: '2px 0 0', color: 'var(--primary)', fontWeight: 700, fontSize: '0.85rem' }}>{doctor.specialization}</p>
                   </div>
                 </div>

@@ -352,14 +352,14 @@ const patientUploadRecord = async (req, res) => {
 		const patient = await Patient.findOneAndUpdate(
 			{ user: req.user._id },
 			{ $setOnInsert: { user: req.user._id } },
-			{ new: true, upsert: true, setDefaultsOnInsert: true }
+			{ returnDocument: 'after', upsert: true, setDefaultsOnInsert: true }
 		);
 
 		if (!patient) {
 			return res.status(404).json({ message: 'Patient profile could not be initialized' });
 		}
 
-		const filePath = `/uploads/${req.file.filename}`;
+		const filePath = req.file.path; // Cloudinary URL
 		
 		const record = await MedicalRecord.create({
 			patient: patient._id,

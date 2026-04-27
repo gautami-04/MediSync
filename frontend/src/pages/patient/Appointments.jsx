@@ -1,11 +1,14 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
+import ConfirmDialog from "../../components/ConfirmDialog";
+
 import DashboardLayout from "../../components/DashboardLayout";
 import { getMyAppointments, bookAppointment, cancelAppointment, rescheduleAppointment } from "../../services/appointment.service";
-import { getAllDoctors } from "../../services/doctor.service";
+import { getAllDoctors, getAvailableSlotsByDate } from "../../services/doctor.service";
 import styles from "./Appointments.module.css";
 import { useLocation } from "react-router-dom";
 import Pagination from "../../components/Pagination";
 import api from "../../services/api";
+import useAuth from "../../hooks/useAuth";
 import { useToast } from "../../components/ToastContext";
 
 const STATUS_CLASS = {
@@ -26,6 +29,7 @@ const formatDate = (value) => {
 const PatientAppointments = () => {
 	const location = useLocation();
 	const { addToast } = useToast();
+	const { user, refreshUser } = useAuth();
 	const [appointments, setAppointments] = useState([]);
 	const [totalCount, setTotalCount] = useState(0);
 	const [stats, setStats] = useState({ total: 0, upcoming: 0, completed: 0, cancelled: 0 });
@@ -35,6 +39,8 @@ const PatientAppointments = () => {
 	const [doctors, setDoctors] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelTargetId, setCancelTargetId] = useState(null);
 	const [success, setSuccess] = useState("");
 	const [filter, setFilter] = useState("all");
 	const [showBookModal, setShowBookModal] = useState(false);
@@ -51,6 +57,8 @@ const PatientAppointments = () => {
 	const [showPaymentModal, setShowPaymentModal] = useState(false);
 	const [paymentProcessing, setPaymentProcessing] = useState(false);
 	const [selectedSlot, setSelectedSlot] = useState(null);
+	const [dynamicSlots, setDynamicSlots] = useState([]);
+	const [loadingSlots, setLoadingSlots] = useState(false);
 
 	const getDayOfWeek = (dateString) => {
 		const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -63,11 +71,28 @@ const PatientAppointments = () => {
 		return doctors.find((d) => d._id === formData.doctorId) || null;
 	}, [formData.doctorId, doctors]);
 
-	const filteredSlots = useMemo(() => {
-		if (!selectedDoctor || !formData.date) return [];
-		const selectedDay = getDayOfWeek(formData.date);
-		return selectedDoctor.availableSlots?.filter(slot => slot.day === selectedDay && !slot.isBooked) || [];
-	}, [selectedDoctor, formData.date]);
+	const filteredSlots = dynamicSlots;
+
+	useEffect(() => {
+		const fetchSlots = async () => {
+			if (!formData.doctorId || !formData.date) {
+				setDynamicSlots([]);
+				return;
+			}
+			setLoadingSlots(true);
+			try {
+				const slots = await getAvailableSlotsByDate(formData.doctorId, formData.date);
+				setDynamicSlots(slots);
+			} catch (err) {
+				console.error("Failed to fetch slots:", err);
+				addToast("Failed to fetch available slots", "error");
+				setDynamicSlots([]);
+			} finally {
+				setLoadingSlots(false);
+			}
+		};
+		fetchSlots();
+	}, [formData.doctorId, formData.date, addToast]);
 
 	// Auto-open modal if navigating from doctor search
 	useEffect(() => {
@@ -154,16 +179,25 @@ const PatientAppointments = () => {
 		}, 2000);
 	};
 
-	const handleCancel = async (id) => {
-		if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
+	const handleCancel = (id) => {
+		setCancelTargetId(id);
+		setShowCancelDialog(true);
+	};
+
+	const confirmCancel = async () => {
+		if (!cancelTargetId) return;
 		setError("");
 		setSuccess("");
 		try {
-			await cancelAppointment(id);
+			await cancelAppointment(cancelTargetId);
 			setSuccess("Appointment cancelled successfully.");
 			await loadAppointments();
+			await refreshUser();
 		} catch (err) {
 			setError(err?.response?.data?.message || "Failed to cancel appointment.");
+		} finally {
+			setShowCancelDialog(false);
+			setCancelTargetId(null);
 		}
 	};
 
@@ -417,7 +451,9 @@ const PatientAppointments = () => {
 									<div className={styles.formGroup}>
 										<label className={styles.formLabel}>Available Slots for {getDayOfWeek(formData.date)}</label>
 										<div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
-											{filteredSlots.length > 0 ? (
+											{loadingSlots ? (
+												<p style={{ fontSize: '0.85rem', color: 'var(--brand-primary)' }}>Loading available slots...</p>
+											) : filteredSlots.length > 0 ? (
 												filteredSlots.map((slot) => (
 													<button
 														key={slot._id}
@@ -588,6 +624,13 @@ const PatientAppointments = () => {
 					</div>
 				</div>
 			)}
+			<ConfirmDialog
+				open={showCancelDialog}
+				title="Cancel Appointment?"
+				message="Are you sure you want to cancel this appointment? This action will refund the amount to your wallet."
+				onConfirm={confirmCancel}
+				onCancel={() => { setShowCancelDialog(false); setCancelTargetId(null); }}
+			/>
 		</>
 	);
 };

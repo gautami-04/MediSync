@@ -13,6 +13,13 @@ const pendingUserSchema = new mongoose.Schema(
     otp: { type: String, default: null },
     otpExpiresAt: { type: Date, default: null },
     otpAttempts: { type: Number, default: 0 },
+    // Doctor specific fields during registration
+    specialization: { type: String },
+    experienceYears: { type: Number },
+    consultationFee: { type: Number },
+    // Patient specific fields during registration
+    age: { type: Number },
+    gender: { type: String },
   },
   { timestamps: true }
 );

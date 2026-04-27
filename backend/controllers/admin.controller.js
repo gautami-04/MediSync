@@ -62,7 +62,7 @@ const approveDoctor = async (req, res) => {
     const doctor = await Doctor.findByIdAndUpdate(
       req.params.id,
       { isApproved: true },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
     res.json(doctor);
@@ -77,7 +77,7 @@ const rejectDoctor = async (req, res) => {
     const doctor = await Doctor.findByIdAndUpdate(
       req.params.id,
       { isApproved: false },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
     res.json(doctor);
@@ -125,9 +125,10 @@ const getAllPayments = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const payments = await Payment.find()
-      .populate('doctor')
+      .populate('doctor', 'user')
       .populate({ 
         path: 'appointment', 
+        select: 'date time doctor patient specialization',
         populate: [
           { path: 'doctor', populate: { path: 'user', select: 'name' } },
           { path: 'patient', populate: { path: 'user', select: 'name' } }
@@ -139,7 +140,8 @@ const getAllPayments = async (req, res) => {
       })
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();
       
     const formattedPayments = payments.map(p => {
       const appt = p.appointment || {};

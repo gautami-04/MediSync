@@ -33,3 +33,7 @@ export const getDoctors = async (filters = {}) => {
     throw error;
   }
 };
+export const getAvailableSlotsByDate = async (doctorId, date) => {
+  const response = await api.get(`/api/doctors/${doctorId}/available-slots`, { params: { date } });
+  return response.data;
+};

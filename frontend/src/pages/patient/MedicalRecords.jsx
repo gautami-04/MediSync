@@ -113,13 +113,18 @@ const MedicalRecords = () => {
                           <FiCalendar size={14} /> {new Date(record.createdAt).toLocaleDateString()}
                         </span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <FiUser size={14} /> {record.doctor?.user?.name || 'Dr. Practitioner'}
+                          <FiUser size={14} /> {record.doctor?.user?.name || ''}
                         </span>
                       </div>
                     </div>
                   </div>
                   <button 
-                    onClick={() => window.open(`http://localhost:5000${record.fileUrl || record.attachments?.[0]}`, '_blank')}
+                    onClick={() => {
+                      const url = record.fileUrl || record.attachments?.[0];
+                      if (!url) return;
+                      const finalUrl = url.startsWith('http') ? url : `http://localhost:5000${url}`;
+                      window.open(finalUrl, '_blank');
+                    }}
                     style={{ 
                     background: '#f1f5f9', 
                     border: 'none', 

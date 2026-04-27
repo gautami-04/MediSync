@@ -245,6 +245,11 @@
   color: #d84b4b;
 }
 
+.statusRefunded {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
 .actionLink {
   color: var(--brand-primary);
   font-weight: 700;

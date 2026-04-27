@@ -1,5 +1,6 @@
 import { createContext, useCallback, useMemo, useState } from "react";
 import { loginUser } from "../services/authService";
+import api from "../services/api";
 
 const TOKEN_KEY = "medisync_token";
 const USER_KEY = "medisync_user";
@@ -149,6 +150,15 @@ export const AuthProvider = ({ children }) => {
 		});
 	}, []);
 
+	const refreshUser = useCallback(async () => {
+		try {
+			const { data } = await api.get("/api/users/me");
+			updateUser(data);
+		} catch (error) {
+			console.error("Failed to refresh user data:", error);
+		}
+	}, [updateUser]);
+
 	const contextValue = useMemo(
 		() => ({
 			token,
@@ -159,8 +169,9 @@ export const AuthProvider = ({ children }) => {
 			completeAuthSession,
 			logout,
 			updateUser,
+			refreshUser,
 		}),
-		[token, user, authLoading, login, completeAuthSession, logout, updateUser]
+		[token, user, authLoading, login, completeAuthSession, logout, updateUser, refreshUser]
 	);
 
 	return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;

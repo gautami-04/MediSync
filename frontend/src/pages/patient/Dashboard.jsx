@@ -126,7 +126,12 @@ const PatientDashboard = () => {
                   </div>
                   <FiDownload 
                     style={{ cursor: 'pointer', color: 'var(--brand-primary)', fontSize: '1.2rem' }} 
-                    onClick={() => window.open(`http://localhost:5000${record.fileUrl}`, '_blank')}
+                    onClick={() => {
+                      const url = record.fileUrl || record.attachments?.[0];
+                      if (!url) return;
+                      const finalUrl = url.startsWith('http') ? url : `http://localhost:5000${url}`;
+                      window.open(finalUrl, '_blank');
+                    }}
                   />
                 </div>
               ))

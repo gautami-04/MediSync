@@ -1,5 +1,7 @@
 const User = require('../models/user.model');
 const PendingUser = require('../models/pendingUser.model');
+const Doctor = require('../models/doctor.model');
+const Patient = require('../models/patient.model');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { generateOtp } = require('../utils/otp');
@@ -26,7 +28,7 @@ const issueOtpForRecord = async (record) => {
 // ================= REGISTER =================
 exports.register = async (req, res) => {
   try {
-    let { name, fullName, email, password, role, phone } = req.body;
+    let { name, fullName, email, password, role, phone, specialization, experience, consultationFee, age, gender } = req.body;
     name = name || fullName;
     email = String(email || '').trim().toLowerCase();
 
@@ -48,10 +50,15 @@ exports.register = async (req, res) => {
         email,
         password: hashedPassword,
         role,
+        specialization,
+        experienceYears: experience,
+        consultationFee,
+        age,
+        gender,
       },
       {
         upsert: true,
-        new: true,
+        returnDocument: 'after',
         setDefaultsOnInsert: true,
       }
     );
@@ -204,6 +211,23 @@ exports.verifyOtp = async (req, res) => {
           otp: null,
           otpExpiresAt: null,
         });
+
+        // Create Profile based on role
+        if (user.role === 'doctor') {
+          await Doctor.create({
+            user: user._id,
+            specialization: pendingUser.specialization || 'General Practice',
+            experienceYears: pendingUser.experienceYears || 0,
+            consultationFee: pendingUser.consultationFee || 0,
+            isApproved: false
+          });
+        } else if (user.role === 'patient') {
+          await Patient.create({
+            user: user._id,
+            gender: pendingUser.gender || '',
+            dateOfBirth: pendingUser.age ? new Date(new Date().setFullYear(new Date().getFullYear() - pendingUser.age)) : null
+          });
+        }
 
         await PendingUser.deleteOne({ _id: pendingUser._id });
 

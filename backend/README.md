@@ -1,173 +1,61 @@
-# MediSync Backend
+# MediSync - Backend
 
-Express and MongoDB API for authentication, user profiles, doctor profiles, appointments, and medical records.
+The backend of MediSync is a RESTful API built with **Node.js**, **Express**, and **MongoDB** (via Mongoose). It handles all business logic, data persistence, and authentication for the MediSync platform.
 
-## Tech Stack
+## Technologies Used
+- **Node.js & Express.js**
+- **MongoDB & Mongoose** (Database & ODM)
+- **JSON Web Tokens (JWT)** (Authentication)
+- **Bcrypt.js** (Password Hashing)
+- **Nodemailer** (Email/OTP delivery)
+- **Multer** (File Upload Handling)
+- **Cloudinary** (Cloud storage for uploaded records)
 
-- Node.js
-- Express
-- MongoDB (Mongoose)
-- JWT authentication
-- bcryptjs (password hashing)
-- dotenv
-- cors
-
-## Project Structure
-
-```text
-backend/
-  app.js
-  server.js
-  config/
-  controllers/
-  middleware/
-  models/
-  routes/
-  services/
-  utils/
-```
-
-## Prerequisites
-
-- Node.js 18+
-- MongoDB connection URI (Atlas)
-
-## Installation
-
-```bash
-npm install
-```
+## Key Features
+- **OTP Verification**: Email-based one-time passwords for secure registration, login, and profile updates.
+- **Role-Based Access Control (RBAC)**: Middleware to protect routes and ensure only authorized roles (Patient, Doctor, Admin) can access specific endpoints.
+- **File Management**: Secure handling and storage of sensitive medical records and profile pictures.
+- **Complex Aggregations**: Mongoose aggregations to calculate statistics for the Admin dashboard.
 
 ## Environment Variables
-
-Create a `.env` file in the backend root:
+Create a `.env` file in this directory with the following variables before running:
 
 ```env
 PORT=5000
-MONGO_URI=mongodb://127.0.0.1:27017/medisync
-JWT_SECRET=replace_with_a_strong_secret
-EMAIL_USER=medisyncg6@gmail.com
-EMAIL_PASS=your_gmail_app_password
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret_key
+EMAIL_USER=your_smtp_email
+EMAIL_PASS=your_smtp_password
+OTP_SMTP_TIMEOUT_MS=10000
+# Add Cloudinary credentials if configured
+CLOUDINARY_CLOUD_NAME=name
+CLOUDINARY_API_KEY=key
+CLOUDINARY_API_SECRET=secret
 ```
 
-### Variable Notes
+## Development Setup
 
-- `PORT` (optional): Server port. Defaults to `5000` if not set.
-- `MONGO_URI` (required): MongoDB connection string.
-- `JWT_SECRET` (required): Secret used to sign and verify JWTs.
-- `EMAIL_USER` (required for OTP email): Sender Gmail address.
-- `EMAIL_PASS` (required for OTP email): Gmail app password for `EMAIL_USER`.
+If you wish to run only the backend server:
 
-## Run
+1. **Navigate to the backend directory**:
+   ```bash
+   cd backend
+   ```
 
-```bash
-npm start
-```
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
 
-Server base URL:
+3. **Start the development server (uses nodemon)**:
+   ```bash
+   npm run dev
+   ```
+   *Note: Use `npm start` for production environments.*
 
-```text
-http://localhost:5000
-```
-
-Health check:
-
-```http
-GET /
-```
-
-## Authentication
-
-Use the access token returned from login/register as a bearer token:
-
-```http
-Authorization: Bearer <token>
-```
-
-## API Routes
-
-Base path for all APIs: `/api`
-
-### Auth
-
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `POST /api/auth/send-otp`
-- `POST /api/auth/verify-otp`
-
-### Users
-
-- `GET /api/users/me` (protected)
-
-### Appointments
-
-- `POST /api/appointments/book` (protected)
-- `GET /api/appointments/my` (protected)
-- `PUT /api/appointments/cancel/:id` (protected)
-- `GET /api/appointments/doctor` (protected)
-
-### Doctors
-
-- `GET /api/doctors`
-- `GET /api/doctors/:id`
-- `GET /api/doctors/profile/me` (protected, doctor/admin)
-- `POST /api/doctors/profile` (protected, doctor/admin)
-- `PUT /api/doctors/profile` (protected, doctor/admin)
-- `DELETE /api/doctors/profile/:id` (protected, doctor/admin)
-
-### Medical Records
-
-- `POST /api/medical-records` (protected, doctor/admin)
-- `GET /api/medical-records/my` (protected, patient)
-- `GET /api/medical-records/doctor/my` (protected, doctor/admin)
-- `GET /api/medical-records/:id` (protected)
-- `PUT /api/medical-records/:id` (protected, doctor/admin)
-- `DELETE /api/medical-records/:id` (protected, doctor/admin)
-
-## Current Notes
-
-- Route files exist for `patient`, `payment`, and `review`, but they are currently empty and not mounted in `app.js`.
-- Error-handling middleware file exists but is not wired in `app.js` yet.
-
-## Frontend Integration
-
-- Development: set the frontend API base URL in `frontend/.env`:
-
-```env
-VITE_API_BASE_URL=http://localhost:5000
-```
-
-- Run both servers for local development:
-
-```bash
-# backend
-cd backend
-npm install
-npm start
-
-# frontend (in a separate terminal)
-cd frontend
-npm install
-npm run dev
-```
-
-- Production: build the frontend and start the backend (backend will serve `frontend/dist` when `NODE_ENV=production`):
-
-```bash
-cd frontend
-npm run build
-
-# then start backend in production mode
-cd ../backend
-NODE_ENV=production npm start
-```
-
-Note: On Windows PowerShell set `NODE_ENV` with `$env:NODE_ENV='production'; npm start`.
-
-## Scripts
-
-- `npm start`: Runs `node server.js`
-
-## License
-
-ISC
+## Deployment Notes (e.g., Render)
+When deploying this service:
+- Set the Root Directory to `backend`
+- Use `npm install` as the Build Command
+- Use `node server.js` or `npm start` as the Start Command
+- Ensure all `.env` variables are properly injected into the deployment host's environment settings.

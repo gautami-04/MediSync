@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { FiMail, FiLock, FiCheckCircle, FiArrowLeft, FiShield, FiKey } from "react-icons/fi";
 import Button from "../../components/Button";
 import InputField from "../../components/InputField";
 import { resetPassword, sendOtp, verifyOtp } from "../../services/authService";
@@ -21,7 +22,6 @@ const ForgotPassword = () => {
 	const [alert, setAlert] = useState(null);
 	const [loading, setLoading] = useState(false);
 	const [resendCountdown, setResendCountdown] = useState(30);
-	const inputRefs = useRef([]);
 	const navigate = useNavigate();
 
 	const otp = otpDigits.join("");
@@ -37,31 +37,6 @@ const ForgotPassword = () => {
 
 		return () => window.clearInterval(timer);
 	}, [step, resendCountdown]);
-
-	const handleOtpChange = (index, value) => {
-		const cleaned = String(value || "").replace(/\D/g, "");
-		const nextDigits = [...otpDigits];
-		nextDigits[index] = cleaned.slice(-1);
-		setOtpDigits(nextDigits);
-
-		if (cleaned && index < OTP_LENGTH - 1) {
-			inputRefs.current[index + 1]?.focus();
-		}
-	};
-
-	const handleOtpKeyDown = (index, event) => {
-		if (event.key === "Backspace" && !otpDigits[index] && index > 0) {
-			inputRefs.current[index - 1]?.focus();
-		}
-
-		if (event.key === "ArrowLeft" && index > 0) {
-			inputRefs.current[index - 1]?.focus();
-		}
-
-		if (event.key === "ArrowRight" && index < OTP_LENGTH - 1) {
-			inputRefs.current[index + 1]?.focus();
-		}
-	};
 
 	const handleIdentifyUser = async (e) => {
 		e.preventDefault();
@@ -187,7 +162,7 @@ const ForgotPassword = () => {
 
 			window.setTimeout(() => {
 				navigate("/login", { replace: true });
-			}, 1200);
+			}, 1500);
 		} catch (error) {
 			setAlert({
 				type: "error",
@@ -202,72 +177,81 @@ const ForgotPassword = () => {
 	};
 
 	const stepMeta = [
-		{ num: 1, label: "IDENTIFY" },
-		{ num: 2, label: "VERIFY" },
-		{ num: 3, label: "RESET" },
+		{ num: 1, label: "Identify", icon: <FiMail /> },
+		{ num: 2, label: "Verify", icon: <FiShield /> },
+		{ num: 3, label: "Reset", icon: <FiLock /> },
 	];
 
+	const renderIcon = () => {
+		if (step === 1) return <FiMail />;
+		if (step === 2) return <FiShield />;
+		return <FiKey />;
+	};
+
 	return (
-		<div className={styles.page} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-			<div className={styles.brand} style={{ color: "var(--bg-dark)", margin: "0 auto 16px" }}>
-				<span className={styles.brandIcon}>
-					<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-						<path d="M19 3H5C3.89 3 3 3.9 3 5V19C3 20.1 3.89 21 5 21H19C20.11 21 21 20.1 21 19V5C21 3.9 20.11 3 19 3ZM17 13H13V17H11V13H7V11H11V7H13V11H17V13Z" />
-					</svg>
-				</span>
-				MediSync
-			</div>
+		<div className={styles.forgotPage}>
+			<div className={styles.forgotCard}>
+				<div className={styles.forgotHeader}>
+					<div className={styles.iconBadge}>
+						{renderIcon()}
+					</div>
+					<h2 className={styles.forgotTitle}>
+						{step === 1 ? "Forgot Password?" : step === 2 ? "Verify Identity" : "Reset Password"}
+					</h2>
+					<p className={styles.forgotDesc}>
+						{step === 1 
+							? "Enter your email address and we'll send you a recovery code." 
+							: step === 2 
+							? "We've sent a 6-digit verification code to your registered email."
+							: "Create a strong password that you don't use elsewhere."
+						}
+					</p>
+				</div>
 
-			<div className={styles.forgotLayout}>
-				<h2 className={styles.heading} style={{ textAlign: "center", fontSize: "1.5rem" }}>Security Recovery</h2>
-				<p className={styles.subHeading} style={{ textAlign: "center", fontSize: "0.85rem", marginTop: "12px", marginBottom: "32px", maxWidth: "300px", margin: "12px auto 32px" }}>
-					Find your account, verify OTP, then create a new password.
-				</p>
-
-				<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px", position: "relative", padding: "0 24px" }}>
-					<div style={{ position: "absolute", top: "12px", left: "40px", right: "40px", height: "2px", background: "var(--input-bg)", zIndex: 1 }}></div>
-					<div style={{ position: "absolute", top: "12px", left: "40px", right: step === 1 ? "calc(100% - 40px)" : step === 2 ? "50%" : "40px", height: "2px", background: "var(--brand-primary)", zIndex: 1 }}></div>
-					
+				<div className={styles.stepper}>
 					{stepMeta.map((item, i) => (
-						<div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", position: "relative", zIndex: 2 }}>
-							<div style={{ width: "26px", height: "26px", borderRadius: "50%", background: step > item.num ? "var(--brand-primary)" : (step === item.num ? "var(--brand-primary)" : "var(--input-bg)"), color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", fontWeight: 700 }}>
-								{step > item.num ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"></path></svg> : item.num}
+						<div 
+							key={i} 
+							className={`${styles.step} ${step === item.num ? styles.stepActive : ""} ${step > item.num ? styles.stepCompleted : ""}`}
+						>
+							<div className={styles.stepCircle}>
+								{step > item.num ? <FiCheckCircle /> : item.num}
 							</div>
-							<div style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "1px", color: step >= item.num ? "var(--text-primary)" : "var(--text-secondary)" }}>{item.label}</div>
+							<span className={styles.stepLabelText}>{item.label}</span>
 						</div>
 					))}
 				</div>
 
-				{alert ? (
-					<div className={`${styles.alert} ${alert.type === "success" ? styles.successAlert : styles.errorAlert}`} role="alert">
+				{alert && (
+					<div className={`${styles.alert} ${alert.type === "success" ? styles.successAlert : styles.errorAlert}`}>
 						{alert.message}
 					</div>
-				) : null}
+				)}
 
-				{step === 1 ? (
+				{step === 1 && (
 					<form className={styles.form} onSubmit={handleIdentifyUser} noValidate>
 						<InputField
-							label="ACCOUNT EMAIL"
+							label="EMAIL ADDRESS"
 							name="forgotEmail"
 							type="email"
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
-							placeholder="name@clinic.com"
+							placeholder="Enter your registered email"
 							error={errors.email}
 							required
 						/>
 
-						<Button type="submit" loading={loading}>
-							Find User & Send OTP
+						<Button type="submit" loading={loading} style={{ height: '52px', fontSize: '1rem' }}>
+							Send Recovery Code
 						</Button>
 					</form>
-				) : null}
+				)}
 
-				{step === 2 ? (
-					<>
-						<div style={{ background: "var(--input-bg)", borderRadius: "16px", padding: "20px", textAlign: "center", marginBottom: "24px", fontSize: "0.9rem", color: "var(--text-secondary)" }}>
-							Enter the 6-digit code sent to<br />
-							<strong style={{ color: "var(--bg-dark)" }}>{email}</strong>
+				{step === 2 && (
+					<div className={styles.form}>
+						<div className={styles.otpInstruction}>
+							Security code sent to:
+							<span className={styles.otpEmail}>{email}</span>
 						</div>
 
 						<form onSubmit={handleVerifyOtp}>
@@ -277,18 +261,28 @@ const ForgotPassword = () => {
 								error={errors.otp}
 							/>
 
-							<Button type="submit" loading={loading} style={{ width: '100%', marginTop: '12px' }}>
-								Verify Security Code
+							<Button type="submit" loading={loading} style={{ width: '100%', marginTop: '24px', height: '52px' }}>
+								Verify & Continue
 							</Button>
 						</form>
 
-						<div style={{ textAlign: "center", marginTop: "24px", fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-							Didn't receive the code? <button type="button" onClick={handleResendOtp} disabled={loading || resendCountdown > 0} style={{ border: "none", background: "transparent", color: "var(--brand-primary)", fontWeight: 700, cursor: loading || resendCountdown > 0 ? "not-allowed" : "pointer", textDecoration: "underline" }}>{resendCountdown > 0 ? `Resend in ${resendCountdown}s` : "Resend Code"}</button>
+						<div className={styles.forgotFooter} style={{ border: 'none', marginTop: '12px' }}>
+							<p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+								Didn't receive the code?
+							</p>
+							<button 
+								type="button" 
+								onClick={handleResendOtp} 
+								disabled={loading || resendCountdown > 0} 
+								className={styles.resendBtn}
+							>
+								{resendCountdown > 0 ? `Resend code in ${resendCountdown}s` : "Resend Security Code"}
+							</button>
 						</div>
-					</>
-				) : null}
+					</div>
+				)}
 
-				{step === 3 ? (
+				{step === 3 && (
 					<form className={styles.form} onSubmit={handleResetPassword} noValidate>
 						<InputField
 							label="NEW PASSWORD"
@@ -296,7 +290,7 @@ const ForgotPassword = () => {
 							type="password"
 							value={resetForm.newPassword}
 							onChange={(e) => setResetForm((prev) => ({ ...prev, newPassword: e.target.value }))}
-							placeholder="Enter new password"
+							placeholder="Minimum 8 characters"
 							error={errors.newPassword}
 							required
 						/>
@@ -307,31 +301,26 @@ const ForgotPassword = () => {
 							type="password"
 							value={resetForm.confirmPassword}
 							onChange={(e) => setResetForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
-							placeholder="Confirm new password"
+							placeholder="Repeat new password"
 							error={errors.confirmPassword}
 							required
 						/>
 
-						<Button type="submit" loading={loading}>
-							Save New Password
+						<Button type="submit" loading={loading} style={{ height: '52px', fontSize: '1rem' }}>
+							Set New Password
 						</Button>
 					</form>
-				) : null}
+				)}
 
-				<div style={{ textAlign: "center", marginTop: "32px", fontSize: "0.85rem" }}>
-					<Link to="/login" style={{ color: "var(--text-secondary)", textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-						&larr; Return to Sign In
+				<div className={styles.forgotFooter}>
+					<Link to="/login" className={styles.backLink}>
+						<FiArrowLeft /> Back to Sign In
 					</Link>
 				</div>
 			</div>
 
-			<div style={{ textAlign: "center", marginTop: "24px" }}>
-				<div style={{ fontSize: "0.6rem", fontWeight: 700, color: "var(--text-secondary)", letterSpacing: "1px", marginBottom: "16px" }}>SECURED BY MEDISYNC CLINICAL SYSTEMS</div>
-				<div style={{ display: "flex", justifyContent: "center", gap: "24px", fontSize: "0.75rem", color: "var(--text-secondary)" }}>
-					<span>Help Center</span>
-					<span>Privacy Policy</span>
-					<span>Emergency Contact</span>
-				</div>
+			<div style={{ position: 'absolute', bottom: '24px', textAlign: 'center', opacity: 0.5, fontSize: '0.75rem', fontWeight: 600, letterSpacing: '1px' }}>
+				SECURED BY MEDISYNC CLINICAL SYSTEMS
 			</div>
 		</div>
 	);

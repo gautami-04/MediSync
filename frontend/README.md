@@ -1,5 +1,7 @@
 # MediSync - Frontend
 
+**🌐 Live Demo:** [medisync-healthcare.vercel.app](https://medisync-healthcare.vercel.app)
+
 The frontend of MediSync is a modern, responsive web application built with **React** and **Vite**. It provides dedicated portal interfaces for Patients, Doctors, and Administrators.
 
 ## Technologies Used

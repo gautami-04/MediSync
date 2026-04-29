@@ -1,3 +1,4 @@
+// Auth middleware: verify JWT, attach `req.user`, and protect routes.
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 

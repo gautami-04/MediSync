@@ -1,3 +1,4 @@
+// Appointment routes: booking and appointment management for patients, doctors, admins.
 const express = require('express');
 const router = express.Router();
 const protect = require('../middleware/auth.middleware');

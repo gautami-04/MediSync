@@ -1,6 +1,7 @@
+// Email service: sends OTP and transactional emails via nodemailer.
 const nodemailer = require('nodemailer');
 
-const EMAIL_USER = process.env.EMAIL_USER || 'medisyncg6@gmail.com';
+const EMAIL_USER = process.env.EMAIL_USER || 'medisync.healthcare@gmail.com';
 const EMAIL_PASS = process.env.EMAIL_PASS;
 const NORMALIZED_EMAIL_PASS = String(EMAIL_PASS || '').replace(/\s+/g, '');
 const SMTP_TIMEOUT_MS = Number(process.env.OTP_SMTP_TIMEOUT_MS || 10000);

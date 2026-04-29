@@ -1,3 +1,4 @@
+// Upload middleware: multer config to accept image uploads and save to `uploads/`.
 const multer = require('multer');
 const path = require('path');
 

@@ -1,3 +1,4 @@
+// Doctor controller: manage doctor profiles, availability, stats, and related data.
 const Doctor = require('../models/doctor.model');
 const Appointment = require('../models/appointment.model');
 const Payment = require('../models/payment.model');

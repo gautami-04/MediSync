@@ -1,3 +1,4 @@
+// Admin routes: endpoints restricted to admin users for management and reporting.
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/admin.controller');

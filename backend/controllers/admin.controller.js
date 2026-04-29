@@ -1,3 +1,4 @@
+// Admin controller: dashboard stats, user/doctor management, and payment reporting.
 const User = require('../models/user.model');
 const Doctor = require('../models/doctor.model');
 const Patient = require('../models/patient.model');

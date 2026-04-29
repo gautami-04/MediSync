@@ -1,3 +1,4 @@
+// Auth controller: registration, login, OTP flows, password reset, and profile updates.
 const User = require('../models/user.model');
 const PendingUser = require('../models/pendingUser.model');
 const Doctor = require('../models/doctor.model');

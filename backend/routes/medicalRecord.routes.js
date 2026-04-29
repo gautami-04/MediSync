@@ -1,3 +1,4 @@
+// Medical record routes: create, upload, and manage medical records for patients and doctors.
 const express = require('express');
 const multer = require('multer');
 const path = require('path');

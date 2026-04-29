@@ -1,3 +1,4 @@
+// Doctor routes: public and protected endpoints for doctor-related operations.
 const express = require('express');
 const router = express.Router();
 

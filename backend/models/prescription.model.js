@@ -1,3 +1,4 @@
+// Prescription model: medications, advice, and notes linked to an appointment.
 const mongoose = require('mongoose');
 
 const prescriptionSchema = new mongoose.Schema(

@@ -1,3 +1,5 @@
+// MongoDB connection helper using mongoose.
+// Call `connectDB()` to establish the DB connection from startup code.
 const mongoose = require('mongoose');
 
 const connectDB = async () => {

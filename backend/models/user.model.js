@@ -1,3 +1,4 @@
+// User model: authentication, roles, profile, OTP and wallet balance.
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema(

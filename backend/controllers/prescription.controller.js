@@ -1,3 +1,4 @@
+// Prescription controller: create and retrieve prescriptions tied to appointments.
 const Prescription = require('../models/prescription.model');
 const Appointment = require('../models/appointment.model');
 const Doctor = require('../models/doctor.model');

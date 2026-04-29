@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   FiUsers, 
   FiActivity, 
@@ -11,10 +11,14 @@ import api from '../../services/api';
 import DashboardLayout from "../../components/DashboardLayout";
 import Button from "../../components/Button";
 import { useToast } from "../../components/ToastContext";
+const formatCurrency = (value) => {
+  return `₹${Number(value || 0).toFixed(2)}`;
+};
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [doctors, setDoctors] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { addToast } = useToast();
@@ -22,12 +26,14 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchAdminData = async () => {
       try {
-        const [statsRes, doctorsRes] = await Promise.all([
+        const [statsRes, doctorsRes, paymentsRes] = await Promise.all([
           api.get('/api/admin/dashboard'),
-          api.get('/api/admin/doctors')
+          api.get('/api/admin/doctors'),
+          api.get('/api/admin/payments')
         ]);
         setStats(statsRes.data);
         setDoctors(doctorsRes.data?.data || doctorsRes.data || []);
+        setPayments(Array.isArray(paymentsRes.data) ? paymentsRes.data : []);
       } catch (err) {
         console.error('Failed to fetch admin data', err);
         setError('Unable to load administration data.');
@@ -37,6 +43,22 @@ const AdminDashboard = () => {
     };
     fetchAdminData();
   }, []);
+
+  const summary = useMemo(() => {
+    const paidTotal = payments
+      .filter((item) => item?.status === "paid")
+      .reduce((sum, item) => sum + (Number(item?.amount) || 0), 0);
+
+    const refundTotal = payments
+      .filter((item) => item?.status === "refunded")
+      .reduce((sum, item) => sum + (Number(item?.amount) || 0), 0);
+
+    const totalValue = paidTotal - refundTotal;
+
+    return {
+      totalValue
+    };
+  }, [payments]);
 
   const approveDoctor = async (id) => {
     try {
@@ -64,7 +86,7 @@ const AdminDashboard = () => {
             <div style={{ padding: '12px', background: 'var(--primary-light)', color: 'var(--primary)', borderRadius: 'var(--radius-sm)' }}><FiDollarSign size={24} /></div>
             <div>
               <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>System Revenue</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>₹{stats?.totalRevenue || 0}</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{formatCurrency(summary.totalValue)}</div>
             </div>
           </div>
           <div className="stat-card" style={{ background: 'white', padding: '24px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '20px' }}>

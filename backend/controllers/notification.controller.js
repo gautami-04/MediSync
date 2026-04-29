@@ -1,3 +1,4 @@
+// Notification controller: fetch and manage user notifications.
 const Notification = require('../models/notification.model');
 
 // Get My Notifications

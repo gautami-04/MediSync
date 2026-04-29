@@ -1,3 +1,4 @@
+// User routes: endpoints for current user profile and uploading profile pictures.
 const express = require('express');
 const router = express.Router();
 

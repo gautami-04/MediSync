@@ -1,3 +1,4 @@
+// Patient routes: profile, dashboard and saved doctors for patient users.
 const express = require('express');
 
 const router = express.Router();

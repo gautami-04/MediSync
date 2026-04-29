@@ -1,3 +1,5 @@
+// Main Express application: configure middleware and mount API routes.
+// Exports `app` so the server starter can boot and tests can import it.
 const express = require('express');
 const cors = require('cors'); 
 const path = require('path');

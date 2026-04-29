@@ -1,3 +1,4 @@
+// User controller: endpoints to fetch/update the current user and upload profile pictures.
 const User = require('../models/user.model');
 
 const getMe = async (req, res) => {

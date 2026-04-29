@@ -1,3 +1,4 @@
+// Appointment model: scheduling records (patient, doctor, date/time, status).
 const mongoose = require('mongoose');
 
 const appointmentSchema = new mongoose.Schema(

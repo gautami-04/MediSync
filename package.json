@@ -1,11 +1,15 @@
 {
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "concurrently": "^9.2.1"
   },
   "scripts": {
-  "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install",
-  "frontend": "npm run dev --prefix frontend",
-  "backend": "npm run dev --prefix backend",
-  "dev": "concurrently \"npm run backend\" \"npm run frontend\""
-}
+    "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "frontend": "npm run dev --prefix frontend",
+    "backend": "npm run dev --prefix backend",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "test:e2e": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui"
+  }
 }

@@ -1,3 +1,4 @@
+// Patient controller: patient profiles, saved doctors, dashboard and patient helpers.
 const mongoose = require('mongoose');
 const Patient = require('../models/patient.model');
 const Appointment = require('../models/appointment.model');

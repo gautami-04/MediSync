@@ -1,3 +1,4 @@
+// Medical Record controller: create, list, update, delete medical records and uploads.
 const MedicalRecord = require('../models/medicalRecord.model');
 const Appointment = require('../models/appointment.model');
 const Doctor = require('../models/doctor.model');

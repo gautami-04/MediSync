@@ -1,3 +1,4 @@
+// Doctor model: profile for practitioners including availability slots and fees.
 const mongoose = require('mongoose');
 
 const slotSchema = new mongoose.Schema({

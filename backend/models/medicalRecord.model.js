@@ -1,3 +1,4 @@
+// MedicalRecord model: stores diagnoses, medications, tests and attachments for appointments.
 const mongoose = require('mongoose');
 
 const medicationSchema = new mongoose.Schema(

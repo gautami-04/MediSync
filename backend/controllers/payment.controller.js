@@ -1,3 +1,4 @@
+// Payment controller: create payment records and fetch user payments.
 const Payment = require('../models/payment.model');
 const Appointment = require('../models/appointment.model');
 

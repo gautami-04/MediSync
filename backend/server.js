@@ -1,3 +1,5 @@
+// Server entrypoint: load environment variables, connect to MongoDB,
+// ensure `uploads/` exists, and start the HTTP server on `PORT`.
 require('dotenv').config(); // 🔥 MUST BE FIRST
 
 const app = require('./app');

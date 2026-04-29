@@ -1,3 +1,4 @@
+// Notification model: messages and alerts sent to users.
 const mongoose = require('mongoose');
 
 const notificationSchema = new mongoose.Schema(

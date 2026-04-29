@@ -1,3 +1,4 @@
+// Review model: ratings and comments from patients about doctors.
 const mongoose = require('mongoose');
 
 const reviewSchema = new mongoose.Schema(

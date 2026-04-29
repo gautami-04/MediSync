@@ -1,3 +1,4 @@
+// Patient model: profile information linked to a `User` account.
 const mongoose = require('mongoose');
 
 const patientSchema = new mongoose.Schema(

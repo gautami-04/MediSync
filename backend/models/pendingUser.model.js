@@ -1,3 +1,4 @@
+// PendingUser model: temporary registration records used during OTP verification.
 const mongoose = require('mongoose');
 
 const pendingUserSchema = new mongoose.Schema(

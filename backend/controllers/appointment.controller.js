@@ -1,3 +1,4 @@
+// Appointment controller: booking, listing, updating, cancelling, and notifications.
 const Appointment = require('../models/appointment.model');
 const Doctor = require('../models/doctor.model');
 const Patient = require('../models/patient.model');

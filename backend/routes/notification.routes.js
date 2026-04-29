@@ -1,3 +1,4 @@
+// Notification routes: create and retrieve user notifications (admin and user endpoints).
 const express = require('express');
 const router = express.Router();
 const protect = require('../middleware/auth.middleware');

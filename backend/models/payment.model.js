@@ -1,3 +1,4 @@
+// Payment model: stores payment and refund transactions for appointments.
 const mongoose = require('mongoose');
 
 const paymentSchema = new mongoose.Schema(

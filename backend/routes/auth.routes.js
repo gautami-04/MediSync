@@ -1,3 +1,4 @@
+// Auth routes: register, login, OTP flows and protected profile endpoints.
 const express = require('express');
 const router = express.Router();
 const { register, login, sendOtp, verifyOtp, resetPassword, updateProfile, updatePassword } = require('../controllers/auth.controller');

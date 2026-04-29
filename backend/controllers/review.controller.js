@@ -1,3 +1,4 @@
+// Review controller: create and fetch reviews for doctors.
 const Review = require('../models/review.model');
 const Patient = require('../models/patient.model');
 

@@ -90,7 +90,7 @@ const Login = () => {
 						/>
 						
 						<div style={{ position: "relative" }}>
-							<Link to="/forgot-password" style={{ position: "absolute", right: 0, top: 0, fontSize: "0.8rem", color: "#10b981", fontWeight: 700, textDecoration: 'none' }}>Forgot?</Link>
+							<Link to="/forgot-password" style={{ position: "absolute", right: 0, top: 0, fontSize: "0.8rem", color: "#10b981", fontWeight: 700, textDecoration: 'none' }}>Forgot Password?</Link>
 							<InputField 
 								label="Password" 
 								name="password" 
